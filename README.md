@@ -1,0 +1,27 @@
+# m5BidsMeter
+
+M5Stack Core2 を対象とする PlatformIO ファームウェアの開発リポジトリです。現時点のコードは Arduino の生成時サンプルで、メーター機能はまだ実装されていません。名称だけから表示内容やデータ取得方法は確定しません。
+
+## 現在の構成
+
+| パス | 内容 |
+| --- | --- |
+| `platformio.ini` | `m5stack-core2`、`espressif32`、Arduino フレームワークの設定 |
+| `src/main.cpp` | 生成時サンプルの `setup()` と `loop()` |
+| `include/`、`lib/` | ヘッダーとプロジェクト固有ライブラリの配置先 |
+| `test/` | PlatformIO テストの配置先。テストはまだありません |
+| `AGENTS.md` | Codex 向けのリポジトリ作業指針 |
+
+## 開発を始める
+
+PlatformIO Core が使える環境で、リポジトリのルートから次を実行します。
+
+```powershell
+pio run -e m5stack-core2
+```
+
+必要な環境、書き込み、検証方法は [開発ガイド](docs/development.md) を参照してください。製品として決まったことと未決定事項は [要件メモ](docs/requirements.md) に記録します。
+
+## Codex に依頼するとき
+
+機能開発の依頼には、入力元、画面に出す値、更新周期、エラー時の動作、完了条件を含めてください。未確定でも作業できる範囲は進め、必要な判断だけ確認する運用です。
