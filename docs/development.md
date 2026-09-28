@@ -1,40 +1,53 @@
 # 開発ガイド
 
-## 環境
+## 対象と準備
 
-- 対象ボード: M5Stack Core2
-- ビルド環境名: `m5stack-core2`
-- PlatformIO 設定: ルートの `platformio.ini`
-- フレームワーク: Arduino（ESP32）
+対象は M5Stack Core2、PlatformIO 環境名は `m5stack-core2` です。設定はリポジトリ直下の `platformio.ini` にあります。以下のコマンドは PowerShell でリポジトリのルートから実行します。
 
-PlatformIO Core の `pio` コマンド、または PlatformIO IDE を使用します。バージョンや追加ライブラリは現時点で固定されていません。初回ビルドでは PlatformIO が必要なプラットフォームとツールチェーンを取得します。
-
-## ビルド
-
-リポジトリのルートで実行します。
+PlatformIO Core の `pio` が PATH にある場合は `pio` を使用できます。PATH にない Windows 環境では、標準的なユーザー領域のインストール先を次のように指定します。
 
 ```powershell
-pio run -e m5stack-core2
+$pio = Join-Path $env:USERPROFILE '.platformio\penv\Scripts\pio.exe'
+& $pio --version
 ```
 
-成功時は対象環境のビルドが完了します。ビルドだけでは実機動作は確認できません。`pio` が見つからない場合は PlatformIO Core の導入または IDE 側のターミナル環境を確認してください。
+この場所にも存在しない場合は PlatformIO Core または PlatformIO IDE のインストールを確認してください。初回ビルドやテストではプラットフォーム、ツールチェーン、Unity の取得が必要になる場合があります。
 
-## 実機への書き込み
+## Core2 のポートを特定する
 
-M5Stack Core2 を接続し、対象ポートを確認してから実行します。
+Core2 を USB で接続し、ポート一覧を確認します。
 
 ```powershell
-pio device list
-pio run -e m5stack-core2 -t upload
+& $pio device list
+$port = 'COM<number>'  # 一覧から特定した Core2 のポートに置き換える
 ```
 
-複数のシリアル機器がある場合は、対象を確認したうえで `--upload-port` を指定してください。自動化した作業では、利用者が実機書き込みを求めている場合にのみ実行します。
+Core2 の USB シリアル変換チップには CP2104 または CH9102F の機種があります。[M5Stack の Core2 資料](https://docs.m5stack.com/en/core/core2)を参照し、表示されたデバイス名と接続・切断時の変化で対象ポートを確認してください。ポート番号は PC ごとに変わるため、`platformio.ini` に固定しません。デバイスのシリアル番号や MAC アドレスをログ・コミットに含めないでください。
 
-## テストと変更時の確認
+## 通常のファームウェアをビルド・書き込み
 
-現在、`test/` には PlatformIO の説明用 README だけがあり、実行できるテストはありません。機能を追加する際は、ハードウェアなしで確認できるロジックには適切なテストを追加してください。実機に依存する機能は、必要な機材、操作、期待結果を変更報告に記録してください。ビルド、テスト、実機確認の結果は区別して報告します。
+```powershell
+& $pio run -e m5stack-core2
+& $pio run -e m5stack-core2 -t upload --upload-port $port
+```
+
+ビルド成功と書き込み成功は別々に確認します。書き込みコマンドは接続中の Core2 のファームウェアを置き換えます。現行の `src/main.cpp` は生成時サンプルであり、画面表示や通常のシリアル出力はありません。
+
+## 実機テストと双方向シリアル通信
+
+`test/test_environment/test_main.cpp` は ESP32 上で Unity テストを実行し、その後は `PING` に `PONG` と返す診断用ファームウェアです。次の手順では一時的にこのテストファームウェアを書き込みます。
+
+```powershell
+& $pio test -e m5stack-core2 --upload-port $port --test-port $port -f test_environment
+& $pio device monitor -p $port -b 115200
+```
+
+テストでは `test_esp32_runtime_has_free_heap` の `[PASSED]` と、サマリーの成功件数を確認します。モニタが開いたら `PING` を入力して Enter を押し、`PONG` が返ることを確認します。`Ctrl+C` でモニタを終了します。通信の確認後は、上記の通常ファームウェアの書き込みコマンドを再実行して戻します。モニタを閉じてから書き込んでください。同じポートを同時に開くことはできません。
+
+このテストは PlatformIO のビルド、書き込み、実機上の Unity 実行、USB シリアルの双方向通信を確認します。画面、タッチ操作、BIDS v202 の通信、PC ゲームとの連携は確認しません。機能を実装した際は、それぞれに適したテストと実機確認を追加してください。
 
 ## 参照資料
 
 - [PlatformIO の `pio run`](https://docs.platformio.org/en/latest/core/userguide/cmd_run.html)
 - [PlatformIO の `pio test`](https://docs.platformio.org/en/latest/core/userguide/cmd_test.html)
+- [PlatformIO のシリアルモニタ](https://docs.platformio.org/en/stable/core/userguide/device/cmd_monitor.html)

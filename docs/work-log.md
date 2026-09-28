@@ -37,3 +37,12 @@
 - 判断: ユーザー指定の速度上限 160 km/h と、速度 0 km/h かつ BC 圧 200 kPa 未満で「200 kPa」を赤点滅させる条件を確定。BIDS の項目候補は制作者の [v202 ASCII コマンド資料](https://gist.github.com/TetsuOtter/76b974d462276c9c993ddeb0b6a90cb0) に基づく。通信設定や保安装置のパネル番号は未決定として残す。
 - 検証: 5文書のローカル Markdown リンクがすべて存在すること、要件メモに BIDS v202・4画面・160 km/h・200 kPa 未満の赤点滅条件が記載されていることを確認。`git diff --check` は成功。コード変更はないためビルドは対象外。
 - 次の作業: 接続先のゲームと BIDS 実装、具体的なシリアルデータ、TIMS 画面の参照資料を確定し、実装・検証を計画する。
+
+## 2026-09-28: Core2 開発環境の実機確認
+
+- 目的: ビルド、テスト、アップロード、USB シリアル通信を実機で確認し、再現手順を残す。
+- 変更: `test/test_environment/test_main.cpp` に ESP32 のヒープ確認とシリアルの `PING`/`PONG` 応答を追加。`docs/development.md` を確認手順として整理し、README と AGENTS.md の現状説明を更新した。
+- 判断: PlatformIO は PATH にないがユーザー領域に Core 6.2.0 が存在するため、その実行ファイルを使用する。接続された Core2 のポートは都度検出し、機器固有のシリアル番号や MAC アドレスは文書に保存しない。診断後は通常ファームウェアへ戻す。
+- 検証: `pio run -e m5stack-core2` は成功。`pio test -e m5stack-core2 --upload-port <port> --test-port <port> -f test_environment` は実機で 1 件成功。`pio device monitor -p <port> -b 115200` で `PING` に対する `PONG` を確認。通常ファームウェアの `pio run -e m5stack-core2 -t upload --upload-port <port>` も成功。
+- 制約: 現在の通常ファームウェアは生成時サンプルであり、画面機能と BIDS v202 の通信はまだ確認していない。
+- 次の作業: 製品機能の実装時に、実データを使うテストと画面の実機確認を追加する。

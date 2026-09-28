@@ -2,7 +2,7 @@
 
 ## Project and source of truth
 
-This is a PlatformIO firmware project for M5Stack Core2. `platformio.ini` defines the `m5stack-core2` environment with the Arduino framework. `src/main.cpp` is still the generated sample; meter behavior and tests have not been implemented. Do not infer product requirements from the repository name.
+This is a PlatformIO firmware project for M5Stack Core2. `platformio.ini` defines the `m5stack-core2` environment with the Arduino framework. `src/main.cpp` is still the generated sample; meter behavior has not been implemented. `test/test_environment` checks the board and USB serial path, not product behavior. Use `docs/requirements.md` for the agreed product behavior.
 
 - `README.md`: project entry point and current structure.
 - `docs/requirements.md`: agreed product behavior and open product questions.
@@ -17,6 +17,7 @@ Use both conversation context and the relevant repository files when past inform
 - Treat `README.md`, `AGENTS.md`, `docs/requirements.md`, and `docs/development.md` as coherent current documents. When changing one, review the whole document and its related documents; integrate the new information into the right sections and revise or remove stale and conflicting statements. Write the result as a unified document, without append-only wording or a visible patchwork of additions.
 - Preserve the chronological record in `docs/work-log.md`. At meaningful milestones, record the purpose, changes, decisions and reasons, exact verification and results, blockers, and next action. If a later entry supersedes an earlier status or decision, say so explicitly; keep the earlier entry as history.
 - Keep product requirements in `docs/requirements.md`, procedures in `docs/development.md`, and transient task status in `docs/work-log.md`. Avoid duplicate rules or facts that can drift apart.
+- Do not commit personal information, credentials, tokens, device serial numbers, MAC addresses, or raw diagnostic logs that may contain them. Use placeholders for machine-specific ports and paths in documentation, and inspect the staged diff for sensitive data before each commit.
 
 ## Development and verification
 

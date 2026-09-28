@@ -1,6 +1,6 @@
 # m5BidsMeter
 
-M5Stack Core2 向けの PlatformIO ファームウェア開発リポジトリです。PC の鉄道運転ゲームから BIDS v202 形式の情報を USB シリアル通信で受信し、E233 系 TIMS 風の画面に速度、BC/MR 圧、ブレーキ段数、保安装置の状態を表示します。現在の `src/main.cpp` は Arduino の生成時サンプルで、これらの機能とテストはまだ実装されていません。
+M5Stack Core2 向けの PlatformIO ファームウェア開発リポジトリです。PC の鉄道運転ゲームから BIDS v202 形式の情報を USB シリアル通信で受信し、E233 系 TIMS 風の画面に速度、BC/MR 圧、ブレーキ段数、保安装置の状態を表示します。現在の `src/main.cpp` は Arduino の生成時サンプルで、製品機能はまだ実装されていません。開発環境を確認するための実機テストは `test/` にあります。
 
 ## リポジトリの構成
 
@@ -8,7 +8,7 @@ M5Stack Core2 向けの PlatformIO ファームウェア開発リポジトリで
 | --- | --- |
 | `platformio.ini` | `m5stack-core2`、`espressif32`、Arduino のビルド設定 |
 | `src/`、`include/`、`lib/` | アプリケーションコード、共有ヘッダー、プロジェクト固有ライブラリ |
-| `test/` | PlatformIO テストの配置先。現在は説明用 README のみ |
+| `test/` | PlatformIO の実機環境テスト |
 | [AGENTS.md](AGENTS.md) | Codex の作業・記録・コミット指針 |
 | [要件メモ](docs/requirements.md) | 確定した製品仕様と未決定事項 |
 | [開発ガイド](docs/development.md) | 環境、ビルド、実機書き込み、検証方法 |
