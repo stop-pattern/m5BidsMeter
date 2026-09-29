@@ -21,9 +21,19 @@ class LabelCanvas : public meter::Canvas {
   int rightmostGlyph = -1;
   /** Smallest requested font size for a glyph. */
   int smallestFont = 999;
+  /** True when a lit lamp uses the green face color. */
+  bool greenLamp = false;
+  /** True when a lit lamp uses the orange face color. */
+  bool orangeLamp = false;
+  /** True when a lit lamp uses the red face color. */
+  bool redLamp = false;
 
-  /** Rectangles are not used for a label alone. */
-  void rect(int, int, int, int, meter::Color) override {}
+  /** Records colors applied to lit lamp faces. */
+  void rect(int, int, int, int, meter::Color color) override {
+    if (color == meter::GREEN) greenLamp = true;
+    if (color == meter::ORANGE) orangeLamp = true;
+    if (color == meter::RED) redLamp = true;
+  }
   /** Records the vertical long-sound mark. */
   void line(int x1, int y1, int x2, int y2, meter::Color, int = 1) override {
     if (x1 == x2 && y2 > y1) verticalLongSound = true;
@@ -56,6 +66,14 @@ int main() {
   assert(!label.horizontalLongSound && label.verticalLongSound);
   assert(label.finalGlyph && label.leftmostGlyph < label.rightmostGlyph);
   assert(label.smallestFont >= 12);
+
+  meter::State lampState;
+  lampState.safety = meter::Safety::Ats;
+  lampState.panelValid[2] = lampState.panelValid[3] = lampState.panelValid[7] = true;
+  lampState.panel[2] = lampState.panel[3] = lampState.panel[7] = 1;
+  LabelCanvas lampColors;
+  meter::renderSafety(lampColors, lampState);
+  assert(lampColors.greenLamp && lampColors.orangeLamp && lampColors.redLamp);
 
   meter::State s;
   assert(s.rollingWarning());

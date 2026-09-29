@@ -45,59 +45,113 @@ void drawVerticalLabel(Canvas& canvas, int x, int y, int width, int height, cons
   }
 }
 
-/** Draws a complete row of lamp frames and any known lit states. */
-static void lampRow(Canvas& c, const State& s, Safety safety, const char* const* labels, int count,
-                    int y, int h) {
-  const int margin = 8, gap = 2, w = (320 - 2 * margin - gap * (count - 1)) / count;
-  for (int i = 0; i < count; ++i) {
-    const int x = margin + i * (w + gap);
-    if (!labels[i]) continue;
-    const bool lit = lampOn(s, safety, labels[i]);
-    const Color color = lit ? GREEN : MUTED;
-    c.rect(x, y, w, h, lit ? 0x407246 : 0x111827);
-    outline(c, x, y, w, h, lit ? GREEN : 0x445065);
-    if (*labels[i]) drawVerticalLabel(c, x, y, w, h, labels[i], color);
+/** Label and four-color illuminated face of a safety lamp. */
+struct LampSpec {
+  /** Text shown inside the lamp; null means no frame in that position. */
+  const char* label;
+  /** Background color used only when a confirmed Panel value lights the lamp. */
+  Color litColor;
+};
+
+/** Draws one photographed lamp group at its own screen position. */
+static void drawGroup(Canvas& canvas, const State& state, const LampSpec* lamps, int count, int x,
+                      int y, int width, int height) {
+  /** Horizontal gap between neighboring lamp frames. */
+  constexpr int kGap = 2;
+  /** Equal frame width within this group. */
+  const int lampWidth = (width - kGap * (count - 1)) / count;
+  for (int index = 0; index < count; ++index) {
+    const LampSpec& lamp = lamps[index];
+    if (lamp.label == nullptr) continue;
+    const int left = x + index * (lampWidth + kGap);
+    const bool lit = lampOn(state, state.safety, lamp.label);
+    canvas.rect(left, y, lampWidth, height, lit ? lamp.litColor : 0x111827);
+    outline(canvas, left, y, lampWidth, height, lit ? lamp.litColor : 0x445065);
+    if (*lamp.label)
+      drawVerticalLabel(canvas, left, y, lampWidth, height, lamp.label, lit ? BG : MUTED);
   }
 }
 
-/** Draws lamp frames for the selected ATS, D-ATC, or CS-ATC layout. */
-void renderSafety(Canvas& c, const State& s) {
-  if (s.safety == Safety::Ats) {
-    /** ATS-P/Sn top-row labels in physical order. */
-    static const char* top[] = {"P電源",        "パターン接近", "常用ブレーキ",
-                                "非常ブレーキ", "ブレーキ開放", "ATS-P",
-                                "故障",         "ATS電源",      "ATS動作"};
-    /** ATS-P/Sn lower-row labels in physical order. */
-    static const char* bottom[] = {"",         "三相", "非常短絡",    "耐雪ブレーキ",
-                                   "直通予備", "定速", "駐車ブレーキ"};
-    lampRow(c, s, s.safety, top, 9, 38, 77);
-    lampRow(c, s, s.safety, bottom, 7, 125, 77);
-  } else if (s.safety == Safety::Datc) {
-    /** D-ATC upper-row labels. */
-    static const char* top[] = {"",         "三相", "非常短絡",    "耐雪ブレーキ",
-                                "直通予備", "定速", "駐車ブレーキ"};
-    /** D-ATC middle-row labels. */
-    static const char* middle[] = {"デジタルATC", "ATC",          "切",
-                                   "ATS電源",     "パターン低減", "非常運転"};
-    /** D-ATC lower-row labels. */
-    static const char* bottom[] = {"ATC常用", "ATC非常", "停通防止動作",
-                                   "ATS動作", "ATC電源", "ATC開放"};
-    lampRow(c, s, s.safety, top, 7, 32, 55);
-    lampRow(c, s, s.safety, middle, 6, 93, 55);
-    lampRow(c, s, s.safety, bottom, 6, 154, 55);
-  } else {
-    /** CS-ATC upper-row labels. */
-    static const char* top[] = {"過電流",   "三相",    "非常短絡", "対雪ブレーキ", "直通予備",
-                                "非常運転", "ATC開放", "定速",     "駐車ブレーキ"};
-    /** CS-ATC middle-row labels. */
-    static const char* middle[] = {"TASC", "TASC制御", "TASCブレーキ", "ATO",    "地下鉄",
-                                   "JR",   "ATC常用",  "ATC非常",      "ATC電源"};
-    /** CS-ATC lower-row labels; null omits its frame. */
-    static const char* bottom[] = {"ホームドア", "",    "",        nullptr,  "構内",
-                                   "非設",       "ATC", "ATS動作", "ATS電源"};
-    lampRow(c, s, s.safety, top, 9, 32, 55);
-    lampRow(c, s, s.safety, middle, 9, 93, 55);
-    lampRow(c, s, s.safety, bottom, 9, 154, 55);
+/** Draws ATS-P/Sn's photographed upper, TASC, and door groups. */
+static void renderAts(Canvas& canvas, const State& state) {
+  /** Upper nine lamps in the order shown in img/0.jpeg. */
+  static const LampSpec kUpper[] = {
+      {"P電源", GREEN},      {"パターン接近", ORANGE}, {"常用ブレーキ", ORANGE},
+      {"非常ブレーキ", RED}, {"ブレーキ開放", GREEN},  {"ATS-P", GREEN},
+      {"故障", RED},         {"ATS電源", WHITE},       {"ATS動作", ORANGE}};
+  /** Five TASC lamps below the left side of the upper group. */
+  static const LampSpec kTasc[] = {{"TASC電源", GREEN},
+                                   {"TASCパターン", ORANGE},
+                                   {"TASCブレーキ", ORANGE},
+                                   {"TASC切", ORANGE},
+                                   {"TASC故障", RED}};
+  /** Lower seven lamps for rolling prevention and train/platform doors. */
+  static const LampSpec kDoors[] = {{"転動防止ブレーキ", ORANGE}, {"定位置", GREEN},
+                                    {"車両ドア全閉", GREEN},      {"ホームドア全閉", GREEN},
+                                    {"ホームドア連携", GREEN},    {"ホームドア分離", ORANGE},
+                                    {"ホームドア開放", ORANGE}};
+  drawGroup(canvas, state, kUpper, 9, 8, 32, 304, 68);
+  drawGroup(canvas, state, kTasc, 5, 8, 106, 184, 61);
+  drawGroup(canvas, state, kDoors, 7, 8, 175, 246, 57);
+}
+
+/** Draws D-ATC's left equipment group and right ATC groups. */
+static void renderDatc(Canvas& canvas, const State& state) {
+  /** Seven equipment lamps occupying the left display area. */
+  static const LampSpec kEquipment[] = {
+      {"", WHITE},         {"三相", WHITE}, {"非常短絡", RED},       {"耐雪ブレーキ", ORANGE},
+      {"直通予備", WHITE}, {"定速", GREEN}, {"駐車ブレーキ", ORANGE}};
+  /** Upper right ATC status group. */
+  static const LampSpec kAtcUpper[] = {{"デジタルATC", GREEN},   {"ATC", GREEN},
+                                       {"切", ORANGE},           {"ATS電源", WHITE},
+                                       {"パターン低減", ORANGE}, {"非常運転", RED}};
+  /** Lower right ATC action group. */
+  static const LampSpec kAtcLower[] = {{"ATC常用", ORANGE},      {"ATC非常", RED},
+                                       {"停通防止動作", ORANGE}, {"ATS動作", ORANGE},
+                                       {"ATC電源", WHITE},       {"ATC開放", GREEN}};
+  drawGroup(canvas, state, kEquipment, 7, 8, 32, 153, 174);
+  drawGroup(canvas, state, kAtcUpper, 6, 169, 32, 143, 82);
+  drawGroup(canvas, state, kAtcLower, 6, 169, 121, 143, 82);
+}
+
+/** Draws CS-ATC's photographed left equipment and right ATC regions. */
+static void renderCsatc(Canvas& canvas, const State& state) {
+  /** Nine equipment lamps at the upper left. */
+  static const LampSpec kEquipment[] = {
+      {"過電流", RED},          {"三相", WHITE},     {"非常短絡", RED},
+      {"対雪ブレーキ", ORANGE}, {"直通予備", WHITE}, {"非常運転", RED},
+      {"ATC開放", GREEN},       {"定速", GREEN},     {"駐車ブレーキ", ORANGE}};
+  /** Four TASC/ATO lamps at the lower left. */
+  static const LampSpec kTasc[] = {
+      {"TASC", GREEN}, {"TASC制御", GREEN}, {"TASCブレーキ", ORANGE}, {"ATO", GREEN}};
+  /** Door group with two unlabeled lamps and one absent frame. */
+  static const LampSpec kDoors[] = {
+      {"ホームドア", GREEN}, {"", WHITE}, {"", WHITE}, {nullptr, WHITE}};
+  /** Route and ATC action lamps at the upper right. */
+  static const LampSpec kAtcUpper[] = {
+      {"地下鉄", WHITE}, {"JR", WHITE}, {"ATC常用", ORANGE}, {"ATC非常", RED}, {"ATC電源", WHITE}};
+  /** Route/ATS action lamps at the lower right. */
+  static const LampSpec kAtcLower[] = {
+      {"構内", WHITE}, {"非設", ORANGE}, {"ATC", GREEN}, {"ATS動作", ORANGE}, {"ATS電源", WHITE}};
+  drawGroup(canvas, state, kEquipment, 9, 8, 32, 153, 92);
+  drawGroup(canvas, state, kTasc, 4, 8, 131, 153, 45);
+  drawGroup(canvas, state, kDoors, 4, 8, 184, 153, 45);
+  drawGroup(canvas, state, kAtcUpper, 5, 169, 32, 143, 92);
+  drawGroup(canvas, state, kAtcLower, 5, 169, 131, 143, 95);
+}
+
+/** Draws the lamp layout matching the selected photographed safety system. */
+void renderSafety(Canvas& canvas, const State& state) {
+  switch (state.safety) {
+    case Safety::Ats:
+      renderAts(canvas, state);
+      break;
+    case Safety::Datc:
+      renderDatc(canvas, state);
+      break;
+    case Safety::Csatc:
+      renderCsatc(canvas, state);
+      break;
   }
 }
 

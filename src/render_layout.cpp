@@ -12,29 +12,40 @@ void outline(Canvas& c, int x, int y, int w, int h, Color color) {
   c.line(x, y + h - 1, x + w - 1, y + h - 1, color);
 }
 
-/** Draws the common solid frame for an icon button. */
-static void buttonFrame(Canvas& c, int x, int y, int w, int h) {
-  c.rect(x, y, w, h, 0x344e71);
-  outline(c, x, y, w, h, 0xa3bad4);
+/** Builds the blue-gray bevel and soft corners seen in the reference buttons. */
+static void beveledButton(Canvas& c, int x, int y, int w, int h) {
+  /** Face color reused to expose empty space inside white icon outlines. */
+  constexpr Color kFace = 0x61799e;
+  c.rect(x + 3, y, w - 6, h, 0x344963);
+  c.rect(x, y + 3, w, h - 6, 0x344963);
+  c.rect(x + 3, y + 3, w - 6, h - 6, kFace);
+  c.line(x + 3, y + 1, x + w - 4, y + 1, 0xc2cee0, 2);
+  c.line(x + 1, y + 3, x + 1, y + h - 5, 0xaabbd3, 2);
+  c.line(x + 3, y + h - 2, x + w - 4, y + h - 2, 0x22344f, 2);
+  c.line(x + w - 2, y + 4, x + w - 2, y + h - 4, 0x2b405f, 2);
 }
 
-/** Draws a monitor silhouette for the home-screen action. */
+/** Draws two overlapping white screens matching img/display.png. */
 static void screenIcon(Canvas& c) {
-  buttonFrame(c, 4, 3, 64, 21);
-  outline(c, 25, 6, 22, 12, WHITE);
-  c.line(36, 18, 36, 20, WHITE, 2);
-  c.line(29, 21, 43, 21, WHITE, 2);
+  beveledButton(c, 4, 3, 27, 21);
+  c.rect(16, 10, 9, 9, WHITE);
+  c.rect(17, 11, 7, 7, 0x61799e);
+  c.rect(9, 7, 12, 11, WHITE);
+  c.rect(11, 9, 8, 7, 0x61799e);
 }
 
-/** Draws a lit bulb for the backlight brightness action. */
+/** Draws a white sun with eight rays matching img/bright.png. */
 static void lightIcon(Canvas& c) {
-  buttonFrame(c, 287, 213, 29, 23);
-  c.circle(301, 221, 4, YELLOW);
-  c.rect(299, 225, 4, 2, YELLOW);
-  c.line(299, 229, 303, 229, YELLOW, 2);
-  c.line(301, 215, 301, 216, YELLOW);
-  c.line(293, 221, 295, 221, YELLOW);
-  c.line(307, 221, 309, 221, YELLOW);
+  beveledButton(c, 287, 213, 29, 23);
+  c.circle(301, 224, 5, WHITE);
+  c.line(301, 216, 301, 219, WHITE);
+  c.line(301, 229, 301, 232, WHITE);
+  c.line(292, 224, 296, 224, WHITE);
+  c.line(306, 224, 310, 224, WHITE);
+  c.line(294, 217, 297, 220, WHITE);
+  c.line(305, 228, 308, 231, WHITE);
+  c.line(305, 220, 308, 217, WHITE);
+  c.line(294, 231, 297, 228, WHITE);
 }
 
 /** Draws the background and the common header/navigation controls. */
