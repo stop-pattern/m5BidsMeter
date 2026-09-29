@@ -12,18 +12,36 @@ void outline(Canvas& c, int x, int y, int w, int h, Color color) {
   c.line(x, y + h - 1, x + w - 1, y + h - 1, color);
 }
 
-/** Draws one solid navigation or brightness button. */
-static void button(Canvas& c, int x, int y, int w, int h, const char* label) {
+/** Draws the common solid frame for an icon button. */
+static void buttonFrame(Canvas& c, int x, int y, int w, int h) {
   c.rect(x, y, w, h, 0x344e71);
   outline(c, x, y, w, h, 0xa3bad4);
-  c.text(x + w / 2, y + (h - 13) / 2, label, WHITE, 12, true);
+}
+
+/** Draws a monitor silhouette for the home-screen action. */
+static void screenIcon(Canvas& c) {
+  buttonFrame(c, 4, 3, 64, 21);
+  outline(c, 25, 6, 22, 12, WHITE);
+  c.line(36, 18, 36, 20, WHITE, 2);
+  c.line(29, 21, 43, 21, WHITE, 2);
+}
+
+/** Draws a lit bulb for the backlight brightness action. */
+static void lightIcon(Canvas& c) {
+  buttonFrame(c, 287, 213, 29, 23);
+  c.circle(301, 221, 4, YELLOW);
+  c.rect(299, 225, 4, 2, YELLOW);
+  c.line(299, 229, 303, 229, YELLOW, 2);
+  c.line(301, 215, 301, 216, YELLOW);
+  c.line(293, 221, 295, 221, YELLOW);
+  c.line(307, 221, 309, 221, YELLOW);
 }
 
 /** Draws the background and the common header/navigation controls. */
 void renderCommon(Canvas& c, const State& s) {
   c.rect(0, 0, 320, 240, BG);
   c.rect(0, 0, 320, 27, 0x172235);
-  if (s.screen != Screen::Home) button(c, 4, 3, 64, 21, "画面変更");
+  if (s.screen != Screen::Home) screenIcon(c);
   /** Title of the currently selected screen. */
   const char* title = s.screen == Screen::Home       ? "TIMS メーター"
                       : s.screen == Screen::Speed    ? "速度計"
@@ -32,7 +50,7 @@ void renderCommon(Canvas& c, const State& s) {
                       : s.screen == Screen::Safety   ? "保安装置"
                                                      : "保安装置選択";
   c.text(162, 5, title, WHITE, 14, true);
-  button(c, 287, 213, 29, 23, "明");
+  lightIcon(c);
 }
 
 /** Marks the communication status only after the reply timeout. */
