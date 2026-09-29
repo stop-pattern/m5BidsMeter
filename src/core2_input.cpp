@@ -11,10 +11,12 @@ namespace {
 constexpr unsigned kClickHz = 1600;
 /** Duration of one button tone in milliseconds. */
 constexpr unsigned kClickMs = 55;
+/** Converts a UI percentage to the speaker hardware level. */
+unsigned speakerVolume(uint8_t percent) { return kSoundFullVolume * percent / 100; }
 
 /** Plays one action tone only while the user has enabled sound. */
 void playClick(const State& state) {
-  if (state.soundEnabled) M5.Speaker.tone(kClickHz, kClickMs);
+  if (state.soundPercent > 0) M5.Speaker.tone(kClickHz, kClickMs);
 }
 
 }  // namespace
@@ -37,7 +39,10 @@ bool Core2Input::update(State& state) {
   if (!touch.wasPressed() || touch.y < 0 || touch.y >= 240) return false;
 
   const uint8_t previousBrightness = state.brightness;
-  if (tap(state, touch.x, touch.y)) playClick(state);
+  const uint8_t previousSound = state.soundPercent;
+  const bool activated = tap(state, touch.x, touch.y);
+  if (state.soundPercent != previousSound) M5.Speaker.setVolume(speakerVolume(state.soundPercent));
+  if (activated) playClick(state);
   return previousBrightness != state.brightness;
 }
 

@@ -53,6 +53,15 @@ struct LampSpec {
   Color litColor;
 };
 
+/** Draws a photographed annunciator without the former blue outline. */
+void drawLampFace(Canvas& canvas, int x, int y, int width, int height, bool lit, Color color) {
+  canvas.rect(x, y, width, height, LAMP_DARK);
+  if (lit) {
+    canvas.rect(x + 1, y, width - 2, height, color);
+    canvas.rect(x, y + 1, width, height - 2, color);
+  }
+}
+
 /** Draws one photographed lamp group at its own screen position. */
 static void drawGroup(Canvas& canvas, const State& state, const LampSpec* lamps, int count, int x,
                       int y, int width, int height) {
@@ -65,10 +74,10 @@ static void drawGroup(Canvas& canvas, const State& state, const LampSpec* lamps,
     if (lamp.label == nullptr) continue;
     const int left = x + index * (lampWidth + kGap);
     const bool lit = lampOn(state, state.safety, lamp.label);
-    canvas.rect(left, y, lampWidth, height, lit ? lamp.litColor : 0x111827);
-    outline(canvas, left, y, lampWidth, height, lit ? lamp.litColor : 0x445065);
+    drawLampFace(canvas, left, y, lampWidth, height, lit, lamp.litColor);
     if (*lamp.label)
-      drawVerticalLabel(canvas, left, y, lampWidth, height, lamp.label, lit ? BG : MUTED);
+      drawVerticalLabel(canvas, left, y, lampWidth, height, lamp.label,
+                        lit ? LAMP_TEXT : LAMP_UNLIT_TEXT);
   }
 }
 
@@ -76,20 +85,21 @@ static void drawGroup(Canvas& canvas, const State& state, const LampSpec* lamps,
 static void renderAts(Canvas& canvas, const State& state) {
   /** Upper nine lamps in the order shown in img/0.jpeg. */
   static const LampSpec kUpper[] = {
-      {"P電源", GREEN},      {"パターン接近", ORANGE}, {"常用ブレーキ", ORANGE},
-      {"非常ブレーキ", RED}, {"ブレーキ開放", GREEN},  {"ATS-P", GREEN},
-      {"故障", RED},         {"ATS電源", WHITE},       {"ATS動作", ORANGE}};
+      {"P電源", LAMP_GREEN},      {"パターン接近", LAMP_ORANGE}, {"常用ブレーキ", LAMP_ORANGE},
+      {"非常ブレーキ", LAMP_RED}, {"ブレーキ開放", LAMP_GREEN},  {"ATS-P", LAMP_GREEN},
+      {"故障", LAMP_RED},         {"ATS電源", LAMP_WHITE},       {"ATS動作", LAMP_ORANGE}};
   /** Five TASC lamps below the left side of the upper group. */
-  static const LampSpec kTasc[] = {{"TASC電源", GREEN},
-                                   {"TASCパターン", ORANGE},
-                                   {"TASCブレーキ", ORANGE},
-                                   {"TASC切", ORANGE},
-                                   {"TASC故障", RED}};
+  static const LampSpec kTasc[] = {{"TASC電源", LAMP_GREEN},
+                                   {"TASCパターン", LAMP_ORANGE},
+                                   {"TASCブレーキ", LAMP_ORANGE},
+                                   {"TASC切", LAMP_ORANGE},
+                                   {"TASC故障", LAMP_RED}};
   /** Lower seven lamps for rolling prevention and train/platform doors. */
-  static const LampSpec kDoors[] = {{"転動防止ブレーキ", ORANGE}, {"定位置", GREEN},
-                                    {"車両ドア全閉", GREEN},      {"ホームドア全閉", GREEN},
-                                    {"ホームドア連携", GREEN},    {"ホームドア分離", ORANGE},
-                                    {"ホームドア開放", ORANGE}};
+  static const LampSpec kDoors[] = {
+      {"転動防止ブレーキ", LAMP_ORANGE}, {"定位置", LAMP_GREEN},
+      {"車両ドア全閉", LAMP_GREEN},      {"ホームドア全閉", LAMP_GREEN},
+      {"ホームドア連携", LAMP_GREEN},    {"ホームドア分離", LAMP_ORANGE},
+      {"ホームドア開放", LAMP_ORANGE}};
   drawGroup(canvas, state, kUpper, 9, 8, 32, 304, 68);
   drawGroup(canvas, state, kTasc, 5, 8, 106, 184, 61);
   drawGroup(canvas, state, kDoors, 7, 8, 175, 246, 57);
@@ -98,17 +108,21 @@ static void renderAts(Canvas& canvas, const State& state) {
 /** Draws D-ATC's left equipment group and right ATC groups. */
 static void renderDatc(Canvas& canvas, const State& state) {
   /** Seven equipment lamps occupying the left display area. */
-  static const LampSpec kEquipment[] = {
-      {"", WHITE},         {"三相", WHITE}, {"非常短絡", RED},       {"耐雪ブレーキ", ORANGE},
-      {"直通予備", WHITE}, {"定速", GREEN}, {"駐車ブレーキ", ORANGE}};
+  static const LampSpec kEquipment[] = {{"", LAMP_WHITE},
+                                        {"三相", LAMP_WHITE},
+                                        {"非常短絡", LAMP_RED},
+                                        {"耐雪ブレーキ", LAMP_ORANGE},
+                                        {"直通予備", LAMP_WHITE},
+                                        {"定速", LAMP_GREEN},
+                                        {"駐車ブレーキ", LAMP_ORANGE}};
   /** Upper right ATC status group. */
-  static const LampSpec kAtcUpper[] = {{"デジタルATC", GREEN},   {"ATC", GREEN},
-                                       {"切", ORANGE},           {"ATS電源", WHITE},
-                                       {"パターン低減", ORANGE}, {"非常運転", RED}};
+  static const LampSpec kAtcUpper[] = {{"デジタルATC", LAMP_GREEN},   {"ATC", LAMP_GREEN},
+                                       {"切", LAMP_ORANGE},           {"ATS電源", LAMP_WHITE},
+                                       {"パターン低減", LAMP_ORANGE}, {"非常運転", LAMP_RED}};
   /** Lower right ATC action group. */
-  static const LampSpec kAtcLower[] = {{"ATC常用", ORANGE},      {"ATC非常", RED},
-                                       {"停通防止動作", ORANGE}, {"ATS動作", ORANGE},
-                                       {"ATC電源", WHITE},       {"ATC開放", GREEN}};
+  static const LampSpec kAtcLower[] = {{"ATC常用", LAMP_ORANGE},      {"ATC非常", LAMP_RED},
+                                       {"停通防止動作", LAMP_ORANGE}, {"ATS動作", LAMP_ORANGE},
+                                       {"ATC電源", LAMP_WHITE},       {"ATC開放", LAMP_GREEN}};
   drawGroup(canvas, state, kEquipment, 7, 8, 32, 153, 174);
   drawGroup(canvas, state, kAtcUpper, 6, 169, 32, 143, 82);
   drawGroup(canvas, state, kAtcLower, 6, 169, 121, 143, 82);
@@ -118,21 +132,29 @@ static void renderDatc(Canvas& canvas, const State& state) {
 static void renderCsatc(Canvas& canvas, const State& state) {
   /** Nine equipment lamps at the upper left. */
   static const LampSpec kEquipment[] = {
-      {"過電流", RED},          {"三相", WHITE},     {"非常短絡", RED},
-      {"対雪ブレーキ", ORANGE}, {"直通予備", WHITE}, {"非常運転", RED},
-      {"ATC開放", GREEN},       {"定速", GREEN},     {"駐車ブレーキ", ORANGE}};
+      {"過電流", LAMP_RED},          {"三相", LAMP_WHITE},     {"非常短絡", LAMP_RED},
+      {"対雪ブレーキ", LAMP_ORANGE}, {"直通予備", LAMP_WHITE}, {"非常運転", LAMP_RED},
+      {"ATC開放", LAMP_GREEN},       {"定速", LAMP_GREEN},     {"駐車ブレーキ", LAMP_ORANGE}};
   /** Four TASC/ATO lamps at the lower left. */
-  static const LampSpec kTasc[] = {
-      {"TASC", GREEN}, {"TASC制御", GREEN}, {"TASCブレーキ", ORANGE}, {"ATO", GREEN}};
+  static const LampSpec kTasc[] = {{"TASC", LAMP_GREEN},
+                                   {"TASC制御", LAMP_GREEN},
+                                   {"TASCブレーキ", LAMP_ORANGE},
+                                   {"ATO", LAMP_GREEN}};
   /** Door group with two unlabeled lamps and one absent frame. */
   static const LampSpec kDoors[] = {
-      {"ホームドア", GREEN}, {"", WHITE}, {"", WHITE}, {nullptr, WHITE}};
+      {"ホームドア", LAMP_GREEN}, {"", LAMP_WHITE}, {"", LAMP_WHITE}, {nullptr, LAMP_WHITE}};
   /** Route and ATC action lamps at the upper right. */
-  static const LampSpec kAtcUpper[] = {
-      {"地下鉄", WHITE}, {"JR", WHITE}, {"ATC常用", ORANGE}, {"ATC非常", RED}, {"ATC電源", WHITE}};
+  static const LampSpec kAtcUpper[] = {{"地下鉄", LAMP_WHITE},
+                                       {"JR", LAMP_WHITE},
+                                       {"ATC常用", LAMP_ORANGE},
+                                       {"ATC非常", LAMP_RED},
+                                       {"ATC電源", LAMP_WHITE}};
   /** Route/ATS action lamps at the lower right. */
-  static const LampSpec kAtcLower[] = {
-      {"構内", WHITE}, {"非設", ORANGE}, {"ATC", GREEN}, {"ATS動作", ORANGE}, {"ATS電源", WHITE}};
+  static const LampSpec kAtcLower[] = {{"構内", LAMP_WHITE},
+                                       {"非設", LAMP_ORANGE},
+                                       {"ATC", LAMP_GREEN},
+                                       {"ATS動作", LAMP_ORANGE},
+                                       {"ATS電源", LAMP_WHITE}};
   drawGroup(canvas, state, kEquipment, 9, 8, 32, 153, 92);
   drawGroup(canvas, state, kTasc, 4, 8, 131, 153, 45);
   drawGroup(canvas, state, kDoors, 4, 8, 184, 153, 45);

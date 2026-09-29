@@ -73,16 +73,22 @@ static void lightIcon(Canvas& c) {
   c.line(294, 231, 297, 228, WHITE);
 }
 
-/** Draws the reference speaker solid when enabled and outlined when muted. */
-static void speakerIcon(Canvas& c, bool enabled) {
+/** Draws the reference speaker outlined, partly filled, or fully filled. */
+static void speakerIcon(Canvas& c, uint8_t percent) {
   beveledButton(c, 254, 213, 29, 23);
   c.rect(260, 221, 4, 6, WHITE);
-  if (!enabled) c.rect(261, 222, 2, 4, 0x61799e);
+  if (percent == 0) c.rect(261, 222, 2, 4, 0x61799e);
   c.line(264, 221, 270, 217, WHITE);
   c.line(270, 217, 270, 230, WHITE);
   c.line(270, 230, 264, 226, WHITE);
-  if (enabled)
+  if (percent == 50)
     for (int y = 219; y < 230; ++y) c.line(267, y, 269, y, WHITE);
+  if (percent == 100) {
+    /** Left edge of the horn silhouette at each height, top to bottom. */
+    static const int kHornLeft[] = {270, 269, 267, 266, 264, 264, 264,
+                                    264, 264, 266, 267, 269, 270};
+    for (int row = 0; row < 13; ++row) c.line(kHornLeft[row], 217 + row, 270, 217 + row, WHITE);
+  }
 }
 
 /** Draws the background and the common header/navigation controls. */
@@ -99,14 +105,14 @@ void renderCommon(Canvas& c, const State& s) {
                                                      : "保安装置選択";
   c.text(162, 5, title, WHITE, 14, true);
   lightIcon(c);
-  if (s.screen == Screen::Home) speakerIcon(c, s.soundEnabled);
+  if (s.screen == Screen::Home) speakerIcon(c, s.soundPercent);
 }
 
 /** Marks the communication status only after the reply timeout. */
 void renderStatus(Canvas& c, const State& s, uint32_t nowMs) {
   if (s.disconnected(nowMs)) {
-    c.rect(247, 3, 66, 21, RED);
-    c.text(280, 5, "通信断", BG, 16, true);
+    drawLampFace(c, 247, 3, 66, 21, true, LAMP_RED);
+    c.text(280, 5, "通信断", LAMP_TEXT, 16, true);
   }
 }
 
@@ -158,7 +164,7 @@ bool tap(State& s, int x, int y) {
     return true;
   }
   if (s.screen == Screen::Home && x >= 254 && x < 283 && y >= 213 && y < 236) {
-    s.soundEnabled = !s.soundEnabled;
+    s.soundPercent = s.soundPercent == 100 ? 50 : s.soundPercent == 50 ? 0 : 100;
     return true;
   }
   if (s.screen != Screen::Home && x < 70 && y < 27) {

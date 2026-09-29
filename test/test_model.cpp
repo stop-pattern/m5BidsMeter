@@ -30,9 +30,9 @@ class LabelCanvas : public meter::Canvas {
 
   /** Records colors applied to lit lamp faces. */
   void rect(int, int, int, int, meter::Color color) override {
-    if (color == meter::GREEN) greenLamp = true;
-    if (color == meter::ORANGE) orangeLamp = true;
-    if (color == meter::RED) redLamp = true;
+    if (color == meter::LAMP_GREEN) greenLamp = true;
+    if (color == meter::LAMP_ORANGE) orangeLamp = true;
+    if (color == meter::LAMP_RED) redLamp = true;
   }
   /** Records the vertical long-sound mark. */
   void line(int x1, int y1, int x2, int y2, meter::Color, int = 1) override {
@@ -67,20 +67,25 @@ class HomeCanvas : public meter::Canvas {
   bool darkWarningText = false;
   /** Count of bevel face rectangles in the safety selection screen. */
   int selectionFaces = 0;
+  /** White horizontal fill strokes inside the speaker icon. */
+  int speakerFill = 0;
 
   /** Records the red warning and wide beveled selection faces. */
   void rect(int, int, int width, int height, meter::Color color) override {
-    if (color == meter::RED && width >= 60 && height >= 18) redWarningFace = true;
+    if (color == meter::LAMP_RED && width >= 60 && height >= 18) redWarningFace = true;
     if (color == 0x61799e && width >= 280 && height >= 35) ++selectionFaces;
   }
-  /** Lines are irrelevant to label geometry. */
-  void line(int, int, int, int, meter::Color, int = 1) override {}
+  /** Counts the white fill inside the speaker without counting its outline. */
+  void line(int x1, int y1, int x2, int y2, meter::Color color, int = 1) override {
+    if (color == meter::WHITE && x1 >= 264 && x2 <= 270 && y1 == y2 && y1 >= 218 && y1 <= 229)
+      speakerFill += x2 - x1 + 1;
+  }
   /** Records destination labels and warning font size. */
   void text(int left, int top, const char* value, meter::Color color, int size,
             bool = false) override {
     if (strcmp(value, "通信断") == 0) {
       warningSize = size;
-      darkWarningText = color == meter::BG;
+      darkWarningText = color == meter::LAMP_TEXT;
     }
     if (strcmp(value, "速度計") == 0 || strcmp(value, "圧力計") == 0 ||
         strcmp(value, "ブレーキ段数") == 0 || strcmp(value, "保安装置") == 0) {
@@ -101,11 +106,21 @@ int main() {
   meter::render(homeCanvas, home, 5000);
   if (homeCanvas.count != 4 || homeCanvas.warningSize < 16) return 10;
   if (!homeCanvas.redWarningFace || !homeCanvas.darkWarningText) return 13;
+  home.soundPercent = 50;
+  HomeCanvas halfVolumeCanvas;
+  meter::render(halfVolumeCanvas, home, 5000);
+  home.soundPercent = 0;
+  HomeCanvas mutedCanvas;
+  meter::render(mutedCanvas, home, 5000);
+  if (!(homeCanvas.speakerFill > halfVolumeCanvas.speakerFill &&
+        halfVolumeCanvas.speakerFill > mutedCanvas.speakerFill))
+    return 20;
+  home.soundPercent = 100;
   for (int index = 1; index < 4; ++index)
     if (homeCanvas.x[index] != homeCanvas.x[0] || homeCanvas.y[index] <= homeCanvas.y[index - 1])
       return 11;
   const meter::Screen destinations[] = {meter::Screen::Speed, meter::Screen::Pressure,
-                                         meter::Screen::Brake, meter::Screen::Safety};
+                                        meter::Screen::Brake, meter::Screen::Safety};
   for (int index = 0; index < 4; ++index) {
     home.screen = meter::Screen::Home;
     meter::tap(home, 100, 54 + index * 43);
@@ -115,12 +130,13 @@ int main() {
   HomeCanvas selectCanvas;
   meter::render(selectCanvas, home, 0);
   if (selectCanvas.selectionFaces != 3) return 14;
-  if (!home.soundEnabled) return 15;
+  if (home.soundPercent != 100) return 15;
   home.screen = meter::Screen::Home;
-  if (!meter::tap(home, 269, 223) || home.soundEnabled) return 16;
-  if (!meter::tap(home, 269, 223) || !home.soundEnabled) return 17;
+  if (!meter::tap(home, 269, 223) || home.soundPercent != 50) return 16;
+  if (!meter::tap(home, 269, 223) || home.soundPercent != 0) return 17;
+  if (!meter::tap(home, 269, 223) || home.soundPercent != 100) return 19;
   home.screen = meter::Screen::Safety;
-  if (meter::tap(home, 269, 223) || !home.soundEnabled) return 18;
+  if (meter::tap(home, 269, 223) || home.soundPercent != 100) return 18;
 
   /** Two tiny frames, split into two four-byte bands. */
   const uint8_t previousFrame[8] = {0, 0, 0, 0, 0, 0, 0, 0};

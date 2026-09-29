@@ -4,6 +4,9 @@
 
 namespace meter {
 
+/** Speaker hardware level corresponding to 100 percent interface volume. */
+constexpr uint8_t kSoundFullVolume = 128;
+
 /** Translates Core2 touch and center-button events into meter navigation. */
 class Core2Input {
  public:

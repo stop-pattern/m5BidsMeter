@@ -37,8 +37,8 @@ struct State {
   Safety safety = Safety::Ats;
   /** Backlight brightness percentage. */
   uint8_t brightness = 100;
-  /** Whether interface actions play a short tone; enabled at startup. */
-  bool soundEnabled = true;
+  /** Interface tone level: 0, 50, or 100 percent; full at startup. */
+  uint8_t soundPercent = 100;
 
   /** Parses one complete response and updates readings; returns success. */
   bool apply(const char* line, uint32_t nowMs);

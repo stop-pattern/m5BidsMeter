@@ -5,6 +5,7 @@
 #include "render.h"
 
 #include <stdio.h>
+#include <string.h>
 
 using meter::Color;
 
@@ -148,6 +149,10 @@ int main() {
     s.safety = scene.safety;
     s.speed = scene.warning ? 0 : 72.5f;
     s.bc = scene.warning ? 150 : 330;
+    /** ATS sample values expose the photographed green, orange, and red faces. */
+    const bool atsLamps = strcmp(scene.name, "safety_ats") == 0;
+    s.panelValid[2] = s.panelValid[3] = s.panelValid[7] = atsLamps;
+    s.panel[2] = s.panel[3] = s.panel[7] = atsLamps ? 1 : 0;
     GdiCanvas canvas;
     meter::render(canvas, s, 2000);
     char path[96];
@@ -160,8 +165,13 @@ int main() {
   GdiCanvas disconnected;
   meter::render(disconnected, s, 7000);
   if (!disconnected.save("preview/home_disconnected.bmp")) return 1;
+  /** Half-volume home preview checks the partly filled speaker icon. */
+  s.soundPercent = 50;
+  GdiCanvas halfVolume;
+  meter::render(halfVolume, s, 7000);
+  if (!halfVolume.save("preview/home_half_volume.bmp")) return 1;
   /** Muted home preview checks the outlined speaker icon. */
-  s.soundEnabled = false;
+  s.soundPercent = 0;
   GdiCanvas muted;
   meter::render(muted, s, 7000);
   if (!muted.save("preview/home_muted.bmp")) return 1;
