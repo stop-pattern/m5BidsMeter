@@ -31,6 +31,8 @@ struct State {
   uint32_t lastResponseMs = 0;
   /** Screen currently selected by the user. */
   Screen screen = Screen::Home;
+  /** Zero-based home menu page, retained when returning from a meter. */
+  uint8_t homePage = 0;
   /** Safety system currently selected by the user. */
   Safety safety = Safety::Ats;
   /** Backlight brightness percentage. */

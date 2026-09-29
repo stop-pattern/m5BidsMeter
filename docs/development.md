@@ -56,7 +56,7 @@ $env:PATH = "$compilerBin;$env:PATH"
 & .pio/preview.exe
 ```
 
-`preview/` に 10 枚の BMP ができます。速度、BC 警告の赤・通常状態、ブレーキ、3 種類の保安装置、選択画面を目視確認します。`preview/` はコミットしません。
+`preview/` に 11 枚の BMP ができます。通常と通信断のホーム、速度、BC 警告の赤・通常状態、ブレーキ、3 種類の保安装置、選択画面を目視確認します。`preview/` はコミットしません。
 
 ## 描画とコードの構成
 
@@ -64,7 +64,7 @@ $env:PATH = "$compilerBin;$env:PATH"
 
 日本語は読みやすいゴシック系フォントを選びます。表示灯の縦書きは長音記号を縦線にし、長い文字列は右列から左列へ折り返して枠内に収めます。各モジュールの公開 API、関数、状態を表す変数には Doxygen コメントを付け、責務を明示します。
 
-画面共通の振り分けは `src/render.cpp`、ホームと画面切替は `src/render_layout.cpp`、計器は `src/render_gauges.cpp`、灯群は `src/render_safety.cpp` に置きます。実機固有の USB 通信、操作入力、差分転送は `src/bids_transport.cpp`、`src/core2_input.cpp`、`src/core2_display.cpp` に分けます。コード整形設定は `.clang-format` にあります。
+画面共通の振り分けは `src/render.cpp`、ホームと画面切替は `src/render_layout.cpp`、計器は `src/render_gauges.cpp`、灯群は `src/render_safety.cpp` に置きます。ホームの項目追加時は `include/meter.h` の画面種別、`src/render.cpp` の振り分け、`src/render_layout.cpp` の行先・表示名一覧を合わせて更新します。ホームは 1 ページ 4 行で、項目数からページ数を求めます。実機固有の USB 通信、操作入力、差分転送は `src/bids_transport.cpp`、`src/core2_input.cpp`、`src/core2_display.cpp` に分けます。コード整形設定は `.clang-format` にあります。
 
 ## 模擬 BIDS 送信機
 

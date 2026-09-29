@@ -4,6 +4,31 @@
 
 namespace meter {
 
+/** One destination and its title in the home menu. */
+struct HomeEntry {
+  /** Destination screen selected by touching the row. */
+  Screen screen;
+  /** Japanese title centered on the row button. */
+  const char* title;
+};
+
+/** Home destinations in display order; adding entries enables further pages. */
+static const HomeEntry kHomeEntries[] = {{Screen::Speed, "速度計"},
+                                         {Screen::Pressure, "圧力計"},
+                                         {Screen::Brake, "ブレーキ段数"},
+                                         {Screen::Safety, "保安装置"}};
+/** Number of home rows shown at once. */
+static constexpr int kHomeRows = 4;
+/** First home row's top coordinate. */
+static constexpr int kHomeTop = 35;
+/** Vertical pitch between home rows. */
+static constexpr int kHomePitch = 43;
+/** Number of configured home destinations. */
+static constexpr int kHomeCount = sizeof(kHomeEntries) / sizeof(kHomeEntries[0]);
+
+/** Returns the number of menu pages needed by configured destinations. */
+static int homePageCount() { return (kHomeCount + kHomeRows - 1) / kHomeRows; }
+
 /** Draws a one-pixel rectangular frame. */
 void outline(Canvas& c, int x, int y, int w, int h, Color color) {
   c.line(x, y, x + w - 1, y, color);
@@ -66,25 +91,39 @@ void renderCommon(Canvas& c, const State& s) {
 
 /** Marks the communication status only after the reply timeout. */
 void renderStatus(Canvas& c, const State& s, uint32_t nowMs) {
-  if (s.disconnected(nowMs)) c.text(280, 5, "通信断", RED, 11, true);
+  if (s.disconnected(nowMs)) {
+    c.rect(247, 3, 66, 21, 0x4b2530);
+    outline(c, 247, 3, 66, 21, RED);
+    c.text(280, 5, "通信断", WHITE, 16, true);
+  }
 }
 
-/** Draws four home-screen destination cards. */
+/** Draws one page of vertically stacked home buttons. */
 void renderHome(Canvas& c, const State& s) {
-  /** Home-screen labels ordered left to right, top to bottom. */
-  static const char* names[] = {"速度計", "圧力計", "ブレーキ段数", "保安装置"};
-  for (int i = 0; i < 4; ++i) {
-    const int x = 20 + (i % 2) * 150, y = 47 + (i / 2) * 76;
-    c.rect(x, y, 130, 62, PANEL);
-    outline(c, x, y, 130, 62, EDGE);
-    c.rect(x + 4, y + 4, 5, 54, i == 0 ? GREEN : i == 1 ? ORANGE : i == 2 ? YELLOW : 0x8aabff);
-    c.text(x + 70, y + 20, names[i], WHITE, 16, true);
+  for (int row = 0; row < kHomeRows; ++row) {
+    const int index = int(s.homePage) * kHomeRows + row;
+    if (index >= kHomeCount) break;
+    const int y = kHomeTop + row * kHomePitch;
+    beveledButton(c, 28, y, 260, 39);
+    c.text(158, y + 9, kHomeEntries[index].title, WHITE, 20, true);
   }
   /** Name of the selected safety system shown on the home screen. */
   const char* safety = s.safety == Safety::Ats    ? "ATS-P / Sn"
                        : s.safety == Safety::Datc ? "D-ATC"
                                                   : "CS-ATC / ATC-10";
-  c.text(160, 207, safety, MUTED, 12, true);
+  c.text(160, 216, safety, MUTED, 12, true);
+  if (homePageCount() > 1) {
+    if (s.homePage > 0) {
+      beveledButton(c, 24, 210, 26, 25);
+      c.line(41, 217, 34, 222, WHITE, 2);
+      c.line(34, 222, 41, 227, WHITE, 2);
+    }
+    if (s.homePage + 1 < homePageCount()) {
+      beveledButton(c, 245, 210, 26, 25);
+      c.line(253, 217, 260, 222, WHITE, 2);
+      c.line(260, 222, 253, 227, WHITE, 2);
+    }
+  }
 }
 
 /** Draws the three selectable safety-system cards. */
@@ -112,9 +151,16 @@ void tap(State& s, int x, int y) {
     return;
   }
   if (s.screen == Screen::Home) {
-    if (x >= 20 && x < 300 && y >= 47 && y < 185) {
-      int col = x >= 170 ? 1 : 0, row = y >= 123 ? 1 : 0;
-      s.screen = Screen(1 + row * 2 + col);
+    if (homePageCount() > 1 && y >= 210 && y < 236) {
+      if (x >= 24 && x < 50 && s.homePage > 0) --s.homePage;
+      if (x >= 245 && x < 271 && s.homePage + 1 < homePageCount()) ++s.homePage;
+      return;
+    }
+    if (x >= 28 && x < 288 && y >= kHomeTop) {
+      const int row = (y - kHomeTop) / kHomePitch;
+      const int index = int(s.homePage) * kHomeRows + row;
+      if (row < kHomeRows && y < kHomeTop + row * kHomePitch + 39 && index < kHomeCount)
+        s.screen = kHomeEntries[index].screen;
     }
   } else if (s.screen == Screen::Select && y >= 41 && y < 197) {
     int row = (y - 41) / 55;

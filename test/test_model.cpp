@@ -50,7 +50,54 @@ class LabelCanvas : public meter::Canvas {
   void circle(int, int, int, meter::Color) override {}
 };
 
+/** Captures home menu label positions and communication warning font. */
+class HomeCanvas : public meter::Canvas {
+ public:
+  /** Number of visible home destination labels. */
+  int count = 0;
+  /** Horizontal coordinate shared by the four menu labels. */
+  int x[4] = {};
+  /** Vertical coordinates of the four menu labels. */
+  int y[4] = {};
+  /** Requested font size for the communication warning. */
+  int warningSize = 0;
+
+  /** Rectangles are irrelevant to label geometry. */
+  void rect(int, int, int, int, meter::Color) override {}
+  /** Lines are irrelevant to label geometry. */
+  void line(int, int, int, int, meter::Color, int = 1) override {}
+  /** Records destination labels and warning font size. */
+  void text(int left, int top, const char* value, meter::Color, int size, bool = false) override {
+    if (strcmp(value, "通信断") == 0) warningSize = size;
+    if (strcmp(value, "速度計") == 0 || strcmp(value, "圧力計") == 0 ||
+        strcmp(value, "ブレーキ段数") == 0 || strcmp(value, "保安装置") == 0) {
+      if (count < 4) {
+        x[count] = left;
+        y[count] = top;
+      }
+      ++count;
+    }
+  }
+  /** Circles are irrelevant to label geometry. */
+  void circle(int, int, int, meter::Color) override {}
+};
+
 int main() {
+  meter::State home;
+  HomeCanvas homeCanvas;
+  meter::render(homeCanvas, home, 5000);
+  if (homeCanvas.count != 4 || homeCanvas.warningSize < 16) return 10;
+  for (int index = 1; index < 4; ++index)
+    if (homeCanvas.x[index] != homeCanvas.x[0] || homeCanvas.y[index] <= homeCanvas.y[index - 1])
+      return 11;
+  const meter::Screen destinations[] = {meter::Screen::Speed, meter::Screen::Pressure,
+                                         meter::Screen::Brake, meter::Screen::Safety};
+  for (int index = 0; index < 4; ++index) {
+    home.screen = meter::Screen::Home;
+    meter::tap(home, 100, 54 + index * 43);
+    if (home.screen != destinations[index]) return 12;
+  }
+
   /** Two tiny frames, split into two four-byte bands. */
   const uint8_t previousFrame[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   uint8_t nextFrame[8] = {0, 0, 0, 0, 0, 0, 0, 0};

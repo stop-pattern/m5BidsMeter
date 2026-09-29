@@ -154,5 +154,11 @@ int main() {
     snprintf(path, sizeof(path), "preview/%s.bmp", scene.name);
     if (!canvas.save(path)) return 1;
   }
+  /** Disconnected home preview checks the larger Japanese status label. */
+  s.screen = meter::Screen::Home;
+  s.received = false;
+  GdiCanvas disconnected;
+  meter::render(disconnected, s, 7000);
+  if (!disconnected.save("preview/home_disconnected.bmp")) return 1;
   return 0;
 }
