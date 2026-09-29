@@ -1,4 +1,5 @@
 #include "meter.h"
+#include "render.h"
 
 #include <assert.h>
 
@@ -29,5 +30,11 @@ int main() {
   assert(!meter::lampOn(s, s.safety, "地下鉄"));
   s.cycleBrightness(); assert(s.brightness == 25);
   s.cycleBrightness(); assert(s.brightness == 50);
+  s.screen = meter::Screen::Home;
+  meter::tap(s, 30, 60); assert(s.screen == meter::Screen::Speed);
+  meter::tap(s, 10, 10); assert(s.screen == meter::Screen::Home);
+  s.screen = meter::Screen::Select;
+  meter::tap(s, 100, 110); assert(s.safety == meter::Safety::Datc && s.screen == meter::Screen::Home);
+  meter::tap(s, 300, 220); assert(s.brightness == 75);
   return 0;
 }
