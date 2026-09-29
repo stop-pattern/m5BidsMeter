@@ -43,7 +43,7 @@ class Canvas {
 
 /** Draws one full meter frame from the current state. */
 void render(Canvas& c, const State& state, uint32_t nowMs);
-/** Applies one touch on the 320 by 240 screen to navigation state. */
-void tap(State& state, int x, int y);
+/** Applies one touch; returns true when a control was activated. */
+bool tap(State& state, int x, int y);
 
 }  // namespace meter

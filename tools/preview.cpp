@@ -160,5 +160,10 @@ int main() {
   GdiCanvas disconnected;
   meter::render(disconnected, s, 7000);
   if (!disconnected.save("preview/home_disconnected.bmp")) return 1;
+  /** Muted home preview checks the outlined speaker icon. */
+  s.soundEnabled = false;
+  GdiCanvas muted;
+  meter::render(muted, s, 7000);
+  if (!muted.save("preview/home_muted.bmp")) return 1;
   return 0;
 }

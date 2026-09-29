@@ -23,6 +23,8 @@ meter::Core2Display display;
 void setup() {
   auto config = M5.config();
   M5.begin(config);
+  M5.Speaker.begin();
+  M5.Speaker.setVolume(64);
   display.begin();
   display.setBrightness(state.brightness);
   transport.begin(millis());

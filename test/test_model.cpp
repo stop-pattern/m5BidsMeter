@@ -61,14 +61,27 @@ class HomeCanvas : public meter::Canvas {
   int y[4] = {};
   /** Requested font size for the communication warning. */
   int warningSize = 0;
+  /** True when the warning uses the same solid red as an illuminated lamp. */
+  bool redWarningFace = false;
+  /** True when the warning label uses dark text on its lit face. */
+  bool darkWarningText = false;
+  /** Count of bevel face rectangles in the safety selection screen. */
+  int selectionFaces = 0;
 
-  /** Rectangles are irrelevant to label geometry. */
-  void rect(int, int, int, int, meter::Color) override {}
+  /** Records the red warning and wide beveled selection faces. */
+  void rect(int, int, int width, int height, meter::Color color) override {
+    if (color == meter::RED && width >= 60 && height >= 18) redWarningFace = true;
+    if (color == 0x61799e && width >= 280 && height >= 35) ++selectionFaces;
+  }
   /** Lines are irrelevant to label geometry. */
   void line(int, int, int, int, meter::Color, int = 1) override {}
   /** Records destination labels and warning font size. */
-  void text(int left, int top, const char* value, meter::Color, int size, bool = false) override {
-    if (strcmp(value, "通信断") == 0) warningSize = size;
+  void text(int left, int top, const char* value, meter::Color color, int size,
+            bool = false) override {
+    if (strcmp(value, "通信断") == 0) {
+      warningSize = size;
+      darkWarningText = color == meter::BG;
+    }
     if (strcmp(value, "速度計") == 0 || strcmp(value, "圧力計") == 0 ||
         strcmp(value, "ブレーキ段数") == 0 || strcmp(value, "保安装置") == 0) {
       if (count < 4) {
@@ -87,6 +100,7 @@ int main() {
   HomeCanvas homeCanvas;
   meter::render(homeCanvas, home, 5000);
   if (homeCanvas.count != 4 || homeCanvas.warningSize < 16) return 10;
+  if (!homeCanvas.redWarningFace || !homeCanvas.darkWarningText) return 13;
   for (int index = 1; index < 4; ++index)
     if (homeCanvas.x[index] != homeCanvas.x[0] || homeCanvas.y[index] <= homeCanvas.y[index - 1])
       return 11;
@@ -97,6 +111,16 @@ int main() {
     meter::tap(home, 100, 54 + index * 43);
     if (home.screen != destinations[index]) return 12;
   }
+  home.screen = meter::Screen::Select;
+  HomeCanvas selectCanvas;
+  meter::render(selectCanvas, home, 0);
+  if (selectCanvas.selectionFaces != 3) return 14;
+  if (!home.soundEnabled) return 15;
+  home.screen = meter::Screen::Home;
+  if (!meter::tap(home, 269, 223) || home.soundEnabled) return 16;
+  if (!meter::tap(home, 269, 223) || !home.soundEnabled) return 17;
+  home.screen = meter::Screen::Safety;
+  if (meter::tap(home, 269, 223) || !home.soundEnabled) return 18;
 
   /** Two tiny frames, split into two four-byte bands. */
   const uint8_t previousFrame[8] = {0, 0, 0, 0, 0, 0, 0, 0};

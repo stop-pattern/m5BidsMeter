@@ -73,6 +73,18 @@ static void lightIcon(Canvas& c) {
   c.line(294, 231, 297, 228, WHITE);
 }
 
+/** Draws the reference speaker solid when enabled and outlined when muted. */
+static void speakerIcon(Canvas& c, bool enabled) {
+  beveledButton(c, 254, 213, 29, 23);
+  c.rect(260, 221, 4, 6, WHITE);
+  if (!enabled) c.rect(261, 222, 2, 4, 0x61799e);
+  c.line(264, 221, 270, 217, WHITE);
+  c.line(270, 217, 270, 230, WHITE);
+  c.line(270, 230, 264, 226, WHITE);
+  if (enabled)
+    for (int y = 219; y < 230; ++y) c.line(267, y, 269, y, WHITE);
+}
+
 /** Draws the background and the common header/navigation controls. */
 void renderCommon(Canvas& c, const State& s) {
   c.rect(0, 0, 320, 240, BG);
@@ -87,14 +99,14 @@ void renderCommon(Canvas& c, const State& s) {
                                                      : "保安装置選択";
   c.text(162, 5, title, WHITE, 14, true);
   lightIcon(c);
+  if (s.screen == Screen::Home) speakerIcon(c, s.soundEnabled);
 }
 
 /** Marks the communication status only after the reply timeout. */
 void renderStatus(Canvas& c, const State& s, uint32_t nowMs) {
   if (s.disconnected(nowMs)) {
-    c.rect(247, 3, 66, 21, 0x4b2530);
-    outline(c, 247, 3, 66, 21, RED);
-    c.text(280, 5, "通信断", WHITE, 16, true);
+    c.rect(247, 3, 66, 21, RED);
+    c.text(280, 5, "通信断", BG, 16, true);
   }
 }
 
@@ -119,9 +131,9 @@ void renderHome(Canvas& c, const State& s) {
       c.line(34, 222, 41, 227, WHITE, 2);
     }
     if (s.homePage + 1 < homePageCount()) {
-      beveledButton(c, 245, 210, 26, 25);
-      c.line(253, 217, 260, 222, WHITE, 2);
-      c.line(260, 222, 253, 227, WHITE, 2);
+      beveledButton(c, 222, 210, 26, 25);
+      c.line(230, 217, 237, 222, WHITE, 2);
+      c.line(237, 222, 230, 227, WHITE, 2);
     }
   }
 }
@@ -133,42 +145,55 @@ void renderSelect(Canvas& c, const State& s) {
                                 "CS-ATC / ATC-10  E233-2000"};
   for (int i = 0; i < 3; ++i) {
     int y = 41 + i * 55;
-    c.rect(12, y, 296, 46, PANEL);
-    outline(c, 12, y, 296, 46, EDGE);
+    beveledButton(c, 12, y, 296, 46);
     c.text(160, y + 13, names[i], WHITE, 14, true);
   }
   (void)s;
 }
 
-/** Converts a touch point to one screen or brightness action. */
-void tap(State& s, int x, int y) {
+/** Converts a touch point to one screen, brightness, or sound action. */
+bool tap(State& s, int x, int y) {
   if (x >= 287 && y >= 211) {
     s.cycleBrightness();
-    return;
+    return true;
+  }
+  if (s.screen == Screen::Home && x >= 254 && x < 283 && y >= 213 && y < 236) {
+    s.soundEnabled = !s.soundEnabled;
+    return true;
   }
   if (s.screen != Screen::Home && x < 70 && y < 27) {
     s.screen = Screen::Home;
-    return;
+    return true;
   }
   if (s.screen == Screen::Home) {
     if (homePageCount() > 1 && y >= 210 && y < 236) {
-      if (x >= 24 && x < 50 && s.homePage > 0) --s.homePage;
-      if (x >= 245 && x < 271 && s.homePage + 1 < homePageCount()) ++s.homePage;
-      return;
+      if (x >= 24 && x < 50 && s.homePage > 0) {
+        --s.homePage;
+        return true;
+      }
+      if (x >= 222 && x < 248 && s.homePage + 1 < homePageCount()) {
+        ++s.homePage;
+        return true;
+      }
+      return false;
     }
     if (x >= 28 && x < 288 && y >= kHomeTop) {
       const int row = (y - kHomeTop) / kHomePitch;
       const int index = int(s.homePage) * kHomeRows + row;
-      if (row < kHomeRows && y < kHomeTop + row * kHomePitch + 39 && index < kHomeCount)
+      if (row < kHomeRows && y < kHomeTop + row * kHomePitch + 39 && index < kHomeCount) {
         s.screen = kHomeEntries[index].screen;
+        return true;
+      }
     }
   } else if (s.screen == Screen::Select && y >= 41 && y < 197) {
     int row = (y - 41) / 55;
     if (row >= 0 && row < 3) {
       s.safety = Safety(row);
       s.screen = Screen::Home;
+      return true;
     }
   }
+  return false;
 }
 
 }  // namespace meter
