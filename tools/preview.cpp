@@ -165,11 +165,11 @@ int main() {
   GdiCanvas disconnected;
   meter::render(disconnected, s, 7000);
   if (!disconnected.save("preview/home_disconnected.bmp")) return 1;
-  /** Half-volume home preview checks the partly filled speaker icon. */
-  s.soundPercent = 50;
-  GdiCanvas halfVolume;
-  meter::render(halfVolume, s, 7000);
-  if (!halfVolume.save("preview/home_half_volume.bmp")) return 1;
+  /** Full-volume home preview checks the fully filled speaker icon. */
+  s.soundPercent = 100;
+  GdiCanvas fullVolume;
+  meter::render(fullVolume, s, 7000);
+  if (!fullVolume.save("preview/home_full_volume.bmp")) return 1;
   /** Muted home preview checks the outlined speaker icon. */
   s.soundPercent = 0;
   GdiCanvas muted;

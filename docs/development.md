@@ -43,9 +43,11 @@ $compilerBin = Join-Path $env:USERPROFILE '.platformio\packages\toolchain-gccmin
 $env:PATH = "$compilerBin;$env:PATH"
 & (Join-Path $compilerBin 'g++.exe') -std=c++11 -Wall -Wextra -Iinclude src/frame_diff.cpp src/meter.cpp src/render.cpp src/render_layout.cpp src/render_gauges.cpp src/render_safety.cpp test/test_model.cpp -o .pio/test_model.exe
 & .pio/test_model.exe
+& (Join-Path $compilerBin 'g++.exe') -std=c++11 -Wall -Wextra -Iinclude src/sound_wave.cpp test/test_sound_wave.cpp -o .pio/test_sound_wave.exe
+& .pio/test_sound_wave.exe
 ```
 
-両コマンドの終了コードが 0 なら、BIDS 応答の解析、状態判定、画面遷移のテストが成功しています。
+両テストプログラムの終了コードが 0 なら、BIDS 応答の解析、状態判定、画面遷移、操作音の 2900 Hz・5800 Hz 成分と始終端のテストが成功しています。
 
 ## PC 上の画面プレビュー
 
@@ -56,7 +58,7 @@ $env:PATH = "$compilerBin;$env:PATH"
 & .pio/preview.exe
 ```
 
-`preview/` に 13 枚の BMP ができます。通常・通信断・音量 50%・消音のホーム、速度、BC 警告の赤・通常状態、ブレーキ、3 種類の保安装置、選択画面を目視確認します。`preview/` はコミットしません。
+`preview/` に 13 枚の BMP ができます。通常・通信断・音量 100%・消音のホーム、速度、BC 警告の赤・通常状態、ブレーキ、3 種類の保安装置、選択画面を目視確認します。`preview/` はコミットしません。
 
 ## 描画とコードの構成
 
@@ -64,7 +66,7 @@ $env:PATH = "$compilerBin;$env:PATH"
 
 日本語は読みやすいゴシック系フォントを選びます。表示灯の縦書きは長音記号を縦線にし、長い文字列は右列から左列へ折り返して枠内に収めます。各モジュールの公開 API、関数、状態を表す変数には Doxygen コメントを付け、責務を明示します。
 
-画面共通の振り分けは `src/render.cpp`、ホームと画面切替は `src/render_layout.cpp`、計器は `src/render_gauges.cpp`、灯群は `src/render_safety.cpp` に置きます。ホームの項目追加時は `include/meter.h` の画面種別、`src/render.cpp` の振り分け、`src/render_layout.cpp` の行先・表示名一覧を合わせて更新します。ホームは 1 ページ 4 行で、項目数からページ数を求めます。実機固有の USB 通信、操作入力、差分転送は `src/bids_transport.cpp`、`src/core2_input.cpp`、`src/core2_display.cpp` に分けます。操作音は `src/core2_input.cpp` の `kClickHz` と `kClickMs`、`include/core2_input.h` の `kSoundFullVolume` を変えて周波数、長さ、100% の音量を調整します。起動時と操作時の音量は同じ最大音量定数を使用します。コード整形設定は `.clang-format` にあります。
+画面共通の振り分けは `src/render.cpp`、ホームと画面切替は `src/render_layout.cpp`、計器は `src/render_gauges.cpp`、灯群は `src/render_safety.cpp` に置きます。ホームの項目追加時は `include/meter.h` の画面種別、`src/render.cpp` の振り分け、`src/render_layout.cpp` の行先・表示名一覧を合わせて更新します。ホームは 1 ページ 4 行で、項目数からページ数を求めます。実機固有の USB 通信、操作入力、差分転送は `src/bids_transport.cpp`、`src/core2_input.cpp`、`src/core2_display.cpp` に分けます。操作音の 2 周波数・波形長・減衰時間は `src/sound_wave.cpp`、PCM 標本化周波数は `include/sound_wave.h`、100% の音量は `include/core2_input.h` の `kSoundFullVolume` を変更します。起動時と操作時の音量は同じ最大音量定数を使用します。コード整形設定は `.clang-format` にあります。
 
 ## 模擬 BIDS 送信機
 

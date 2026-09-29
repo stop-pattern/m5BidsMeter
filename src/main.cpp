@@ -24,7 +24,7 @@ void setup() {
   auto config = M5.config();
   M5.begin(config);
   M5.Speaker.begin();
-  M5.Speaker.setVolume(meter::kSoundFullVolume);
+  M5.Speaker.setVolume(meter::kSoundFullVolume * state.soundPercent / 100);
   display.begin();
   display.setBrightness(state.brightness);
   transport.begin(millis());

@@ -3,20 +3,26 @@
 #include <M5Unified.h>
 
 #include "render.h"
+#include "sound_wave.h"
 
 namespace meter {
 namespace {
 
-/** Single-frequency button tone, adjustable without changing input logic. */
-constexpr unsigned kClickHz = 1600;
-/** Duration of one button tone in milliseconds. */
-constexpr unsigned kClickMs = 55;
+/** Persistent PCM data used by asynchronous M5Unified playback. */
+int16_t clickSamples[kClickSampleCount] = {};
+/** Whether the button waveform has been generated once. */
+bool clickSamplesReady = false;
 /** Converts a UI percentage to the speaker hardware level. */
 unsigned speakerVolume(uint8_t percent) { return kSoundFullVolume * percent / 100; }
 
 /** Plays one action tone only while the user has enabled sound. */
 void playClick(const State& state) {
-  if (state.soundPercent > 0) M5.Speaker.tone(kClickHz, kClickMs);
+  if (state.soundPercent == 0) return;
+  if (!clickSamplesReady) {
+    fillClickWave(clickSamples);
+    clickSamplesReady = true;
+  }
+  M5.Speaker.playRaw(clickSamples, kClickSampleCount, kClickSampleRate, false, 1, 0, true);
 }
 
 }  // namespace

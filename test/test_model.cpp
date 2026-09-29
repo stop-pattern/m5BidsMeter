@@ -106,16 +106,16 @@ int main() {
   meter::render(homeCanvas, home, 5000);
   if (homeCanvas.count != 4 || homeCanvas.warningSize < 16) return 10;
   if (!homeCanvas.redWarningFace || !homeCanvas.darkWarningText) return 13;
-  home.soundPercent = 50;
-  HomeCanvas halfVolumeCanvas;
-  meter::render(halfVolumeCanvas, home, 5000);
+  home.soundPercent = 100;
+  HomeCanvas fullVolumeCanvas;
+  meter::render(fullVolumeCanvas, home, 5000);
   home.soundPercent = 0;
   HomeCanvas mutedCanvas;
   meter::render(mutedCanvas, home, 5000);
-  if (!(homeCanvas.speakerFill > halfVolumeCanvas.speakerFill &&
-        halfVolumeCanvas.speakerFill > mutedCanvas.speakerFill))
+  if (!(fullVolumeCanvas.speakerFill > homeCanvas.speakerFill &&
+        homeCanvas.speakerFill > mutedCanvas.speakerFill))
     return 20;
-  home.soundPercent = 100;
+  home.soundPercent = 50;
   for (int index = 1; index < 4; ++index)
     if (homeCanvas.x[index] != homeCanvas.x[0] || homeCanvas.y[index] <= homeCanvas.y[index - 1])
       return 11;
@@ -130,13 +130,13 @@ int main() {
   HomeCanvas selectCanvas;
   meter::render(selectCanvas, home, 0);
   if (selectCanvas.selectionFaces != 3) return 14;
-  if (home.soundPercent != 100) return 15;
+  if (home.soundPercent != 50) return 15;
   home.screen = meter::Screen::Home;
-  if (!meter::tap(home, 269, 223) || home.soundPercent != 50) return 16;
-  if (!meter::tap(home, 269, 223) || home.soundPercent != 0) return 17;
-  if (!meter::tap(home, 269, 223) || home.soundPercent != 100) return 19;
+  if (!meter::tap(home, 269, 223) || home.soundPercent != 0) return 16;
+  if (!meter::tap(home, 269, 223) || home.soundPercent != 100) return 17;
+  if (!meter::tap(home, 269, 223) || home.soundPercent != 50) return 19;
   home.screen = meter::Screen::Safety;
-  if (meter::tap(home, 269, 223) || home.soundPercent != 100) return 18;
+  if (meter::tap(home, 269, 223) || home.soundPercent != 50) return 18;
 
   /** Two tiny frames, split into two four-byte bands. */
   const uint8_t previousFrame[8] = {0, 0, 0, 0, 0, 0, 0, 0};
