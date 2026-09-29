@@ -135,7 +135,9 @@ int main() {
   const Scene scenes[] = {
       {"home", meter::Screen::Home, meter::Safety::Ats, false},
       {"speed_ats", meter::Screen::Speed, meter::Safety::Ats, false},
+      {"speed_datc", meter::Screen::Speed, meter::Safety::Datc, false},
       {"speed_csatc", meter::Screen::Speed, meter::Safety::Csatc, false},
+      {"speed_csatc_stop", meter::Screen::Speed, meter::Safety::Csatc, false},
       {"pressure", meter::Screen::Pressure, meter::Safety::Ats, false},
       {"pressure_warning", meter::Screen::Pressure, meter::Safety::Ats, true},
       {"brake", meter::Screen::Brake, meter::Safety::Ats, false},
@@ -149,6 +151,15 @@ int main() {
     s.safety = scene.safety;
     s.speed = scene.warning ? 0 : 72.5f;
     s.bc = scene.warning ? 150 : 330;
+    /** Sample-only D-ATC limit illustrates its one-km arrow without assigning a Panel. */
+    s.datcLimitKmh = strcmp(scene.name, "speed_datc") == 0 ? 91 : -1;
+    /** CS-ATC previews show one proceed aspect and one stop aspect. */
+    const bool csProceed = strcmp(scene.name, "speed_csatc") == 0;
+    const bool csStop = strcmp(scene.name, "speed_csatc_stop") == 0;
+    s.panelValid[110] = csProceed;
+    s.panel[110] = csProceed ? 1 : 0;
+    s.panelValid[101] = csStop;
+    s.panel[101] = csStop ? 1 : 0;
     /** ATS sample values expose the photographed green, orange, and red faces. */
     const bool atsLamps = strcmp(scene.name, "safety_ats") == 0;
     s.panelValid[2] = s.panelValid[3] = s.panelValid[7] = atsLamps;

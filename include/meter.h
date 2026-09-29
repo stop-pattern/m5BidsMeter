@@ -21,6 +21,8 @@ struct State {
   int brake = 0;
   /** Power handle value; negative values mean holding brake. */
   int power = 0;
+  /** D-ATC limit in km/h, or -1 until its Panel mapping is known. */
+  int datcLimitKmh = -1;
   /** Last numeric value received for each BIDS Panel index. */
   int panel[256] = {};
   /** Whether each Panel index has received a valid value. */

@@ -4,6 +4,7 @@
 #include "render_internal.h"
 
 #include <assert.h>
+#include <math.h>
 #include <string.h>
 
 /** Captures text and lines used to draw one vertical safety label. */
@@ -100,6 +101,62 @@ class HomeCanvas : public meter::Canvas {
   void circle(int, int, int, meter::Color) override {}
 };
 
+/** Records CS-ATC's red and green aspect lamps above the dial. */
+class SpeedCanvas : public meter::Canvas {
+ public:
+  /** Number of bright red aspect circles. */
+  int redAspects = 0;
+  /** Number of bright green aspect circles. */
+  int greenAspects = 0;
+  /** Closest radial coordinate reached by a green signal arrow. */
+  int nearestArrowX = -1;
+  /** Closest radial coordinate reached by a green signal arrow. */
+  int nearestArrowY = -1;
+  /** Squared radius of the nearest green arrow point. */
+  int nearestRadius = 1000000;
+  /** Orange CS-ATC arrow strokes. */
+  int orangeArrowLines = 0;
+  /** Red stop arrow strokes. */
+  int redArrowLines = 0;
+  /** Dark D-ATC band strokes. */
+  int bandLines = 0;
+  /** Number of D-ATC-only lamp labels drawn. */
+  int datcLabels = 0;
+
+  /** Rectangles are irrelevant to aspect circles. */
+  void rect(int, int, int, int, meter::Color) override {}
+  /** Tracks the inward tip of a green signal arrow. */
+  void line(int x1, int y1, int x2, int y2, meter::Color color, int = 1) override {
+    if (color == meter::ORANGE) ++orangeArrowLines;
+    if (color == meter::RED) ++redArrowLines;
+    if (color == 0x111b28) ++bandLines;
+    if (color != meter::GREEN && color != meter::ORANGE) return;
+    const int xs[] = {x1, x2};
+    const int ys[] = {y1, y2};
+    for (int endpoint = 0; endpoint < 2; ++endpoint) {
+      const int dx = xs[endpoint] - 160;
+      const int dy = ys[endpoint] - 154;
+      const int radius = dx * dx + dy * dy;
+      if (radius < nearestRadius) {
+        nearestRadius = radius;
+        nearestArrowX = xs[endpoint];
+        nearestArrowY = ys[endpoint];
+      }
+    }
+  }
+  /** Counts D-ATC's three unlit speed-screen labels. */
+  void text(int, int, const char* value, meter::Color, int, bool = false) override {
+    if (strcmp(value, "入換") == 0 || strcmp(value, "パターン接近") == 0 || strcmp(value, "×") == 0)
+      ++datcLabels;
+  }
+  /** Counts only bright colored circles above the speed dial. */
+  void circle(int, int y, int, meter::Color color) override {
+    if (y >= 65) return;
+    if (color == meter::RED) ++redAspects;
+    if (color == meter::GREEN) ++greenAspects;
+  }
+};
+
 int main() {
   meter::State home;
   HomeCanvas homeCanvas;
@@ -137,6 +194,56 @@ int main() {
   if (!meter::tap(home, 269, 223) || home.soundPercent != 50) return 19;
   home.screen = meter::Screen::Safety;
   if (meter::tap(home, 269, 223) || home.soundPercent != 50) return 18;
+
+  meter::State aspectState;
+  aspectState.safety = meter::Safety::Csatc;
+  aspectState.panelValid[104] = true;
+  aspectState.panel[104] = 1;
+  SpeedCanvas proceedAspect;
+  meter::renderSpeed(proceedAspect, aspectState);
+  if (proceedAspect.greenAspects != 1 || proceedAspect.redAspects != 0 ||
+      proceedAspect.orangeArrowLines != 17 || proceedAspect.redArrowLines != 0)
+    return 21;
+  aspectState.panel[104] = 0;
+  aspectState.panelValid[105] = true;
+  aspectState.panel[105] = 1;
+  SpeedCanvas proceed15;
+  meter::renderSpeed(proceed15, aspectState);
+  if (aspectState.signalSpeed() != 15 || (proceedAspect.nearestArrowX == proceed15.nearestArrowX &&
+                                          proceedAspect.nearestArrowY == proceed15.nearestArrowY))
+    return 26;
+  aspectState.panelValid[101] = true;
+  aspectState.panel[101] = 1;
+  SpeedCanvas stopAspect;
+  meter::renderSpeed(stopAspect, aspectState);
+  if (stopAspect.redAspects != 1 || stopAspect.greenAspects != 0 ||
+      stopAspect.redArrowLines != 17 || stopAspect.orangeArrowLines != 0)
+    return 22;
+
+  meter::State datcState;
+  datcState.safety = meter::Safety::Datc;
+  datcState.datcLimitKmh = 91;
+  SpeedCanvas datc91;
+  meter::renderSpeed(datc91, datcState);
+  datcState.datcLimitKmh = 92;
+  SpeedCanvas datc92;
+  meter::renderSpeed(datc92, datcState);
+  if (datc91.nearestArrowX < 0 || datc92.nearestArrowX < 0 ||
+      (datc91.nearestArrowX == datc92.nearestArrowX &&
+       datc91.nearestArrowY == datc92.nearestArrowY))
+    return 23;
+  datcState.datcLimitKmh = -1;
+  SpeedCanvas datcUnknown;
+  meter::renderSpeed(datcUnknown, datcState);
+  if (datc91.bandLines != datc92.bandLines || datc91.bandLines != datcUnknown.bandLines ||
+      datcUnknown.bandLines != 121 || datc91.datcLabels != 3)
+    return 24;
+  meter::State atsSpeed;
+  SpeedCanvas atsBase;
+  meter::renderSpeed(atsBase, atsSpeed);
+  if (atsBase.bandLines || atsBase.redAspects || atsBase.greenAspects || atsBase.datcLabels ||
+      atsBase.orangeArrowLines || atsBase.redArrowLines)
+    return 25;
 
   /** Two tiny frames, split into two four-byte bands. */
   const uint8_t previousFrame[8] = {0, 0, 0, 0, 0, 0, 0, 0};

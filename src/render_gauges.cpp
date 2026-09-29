@@ -8,11 +8,43 @@ namespace meter {
 /** Clamps a pointer position while leaving the numeric value unchanged. */
 static int bound(int x, int low, int high) { return x < low ? low : x > high ? high : x; }
 
+/** Converts a displayed speed into the dial angle in radians. */
+static float speedAngle(int speed) {
+  return (150.0f + 240.0f * bound(speed, 0, 160) / 160.0f) * 3.14159265f / 180.0f;
+}
+
+/** Draws a filled signal arrow whose tip always points at the needle pivot. */
+static void signalArrow(Canvas& canvas, int cx, int cy, int radius, int speed, Color color) {
+  const float angle = speedAngle(speed);
+  const float radialX = cosf(angle), radialY = sinf(angle);
+  const float tangentX = -radialY, tangentY = radialX;
+  const int tipX = cx + int(radialX * (radius + 2));
+  const int tipY = cy + int(radialY * (radius + 2));
+  for (int offset = -8; offset <= 8; ++offset) {
+    const int baseX = cx + int(radialX * (radius + 18) + tangentX * offset);
+    const int baseY = cy + int(radialY * (radius + 18) + tangentY * offset);
+    canvas.line(tipX, tipY, baseX, baseY, color);
+  }
+}
+
+/** Draws D-ATC's fixed dark arc from 0 through 120 km/h. */
+static void datcBand(Canvas& canvas, int cx, int cy, int radius) {
+  for (int speed = 0; speed <= 120; ++speed) {
+    const float angle = speedAngle(speed);
+    const int innerX = cx + int(cosf(angle) * (radius - 11));
+    const int innerY = cy + int(sinf(angle) * (radius - 11));
+    const int outerX = cx + int(cosf(angle) * (radius - 3));
+    const int outerY = cy + int(sinf(angle) * (radius - 3));
+    canvas.line(innerX, innerY, outerX, outerY, 0x111b28, 2);
+  }
+}
+
 /** Draws the speed dial, actual numeric speed, and active ATC aspect. */
 void renderSpeed(Canvas& c, const State& s) {
   const int cx = 160, cy = 154, r = 91;
+  if (s.safety == Safety::Datc) datcBand(c, cx, cy, r);
   for (int i = 0; i <= 80; ++i) {
-    const float a = (150.0f + 240.0f * i / 80.0f) * 3.14159265f / 180.0f;
+    const float a = speedAngle(i * 2);
     const int x1 = cx + int(cosf(a) * (r - ((i % 10) == 0 ? 13 : 6)));
     const int y1 = cy + int(sinf(a) * (r - ((i % 10) == 0 ? 13 : 6)));
     c.line(x1, y1, cx + int(cosf(a) * r), cy + int(sinf(a) * r), WHITE, (i % 10) == 0 ? 2 : 1);
@@ -23,20 +55,29 @@ void renderSpeed(Canvas& c, const State& s) {
              true);
     }
   }
-  const float a = (150.0f + 240.0f * bound(int(s.speed), 0, 160) / 160.0f) * 3.14159265f / 180.0f;
+  const float a = speedAngle(int(s.speed));
   c.line(cx, cy, cx + int(cosf(a) * 73), cy + int(sinf(a) * 73), WHITE, 5);
   c.circle(cx, cy, 6, WHITE);
+  if (s.safety == Safety::Csatc) {
+    /** Top two aspect lamps from the CS-ATC reference speedometer. */
+    const bool proceed = s.signalSpeed() > 0;
+    c.circle(130, 47, 7, proceed ? 0x49303a : RED);
+    c.circle(190, 47, 7, proceed ? GREEN : 0x304734);
+  }
   if (s.safety != Safety::Ats) {
-    const int signal = s.signalSpeed();
-    const bool stop = signal <= 0;
-    const float sa =
-        (150.0f + 240.0f * bound(signal < 0 ? 0 : signal, 0, 160) / 160.0f) * 3.14159265f / 180.0f;
-    const int tx = cx + int(cosf(sa) * (r + 4)), ty = cy + int(sinf(sa) * (r + 4));
-    const Color signalColor = stop ? RED : GREEN;
-    c.line(tx, ty - 6, tx - 6, ty + 5, signalColor, 2);
-    c.line(tx - 6, ty + 5, tx + 6, ty + 5, signalColor, 2);
-    c.line(tx + 6, ty + 5, tx, ty - 6, signalColor, 2);
-    if (s.safety == Safety::Datc || signal < 0 || s.lamp(101)) c.text(162, 180, "×", RED, 20, true);
+    const int signal = s.safety == Safety::Datc ? s.datcLimitKmh : s.signalSpeed();
+    const Color arrowColor = signal <= 0 ? RED : s.safety == Safety::Datc ? GREEN : ORANGE;
+    signalArrow(c, cx, cy, r, signal < 0 ? 0 : signal, arrowColor);
+    if (s.safety == Safety::Datc) {
+      drawLampFace(c, 30, 213, 44, 20, false, LAMP_WHITE);
+      c.text(52, 216, "入換", LAMP_UNLIT_TEXT, 12, true);
+      drawLampFace(c, 143, 213, 34, 20, false, LAMP_RED);
+      c.text(160, 214, "×", LAMP_UNLIT_TEXT, 16, true);
+      drawLampFace(c, 95, 38, 130, 20, false, LAMP_ORANGE);
+      c.text(160, 41, "パターン接近", LAMP_UNLIT_TEXT, 12, true);
+    } else if (signal < 0 || s.lamp(101)) {
+      c.text(162, 214, "×", RED, 20, true);
+    }
   }
   char value[32];
   snprintf(value, sizeof(value), "%.0f km/h", floorf(s.speed + 0.5f));
