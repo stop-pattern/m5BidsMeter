@@ -41,7 +41,7 @@ PC 用 C++ コンパイラがない Windows 環境では、PlatformIO の `toolc
 & $pio pkg install --global --tool 'platformio/toolchain-gccmingw32'
 $compilerBin = Join-Path $env:USERPROFILE '.platformio\packages\toolchain-gccmingw32\bin'
 $env:PATH = "$compilerBin;$env:PATH"
-& (Join-Path $compilerBin 'g++.exe') -std=c++11 -Wall -Wextra -Iinclude src/meter.cpp src/render.cpp test/test_model.cpp -o .pio/test_model.exe
+& (Join-Path $compilerBin 'g++.exe') -std=c++11 -Wall -Wextra -Iinclude src/frame_diff.cpp src/meter.cpp src/render.cpp src/render_layout.cpp src/render_gauges.cpp src/render_safety.cpp test/test_model.cpp -o .pio/test_model.exe
 & .pio/test_model.exe
 ```
 
@@ -52,7 +52,7 @@ $env:PATH = "$compilerBin;$env:PATH"
 状態判定テストと同じ C++ 描画処理を Windows GDI で表示用画像に変換します。前節の `$compilerBin` と PATH の設定を使います。
 
 ```powershell
-& (Join-Path $compilerBin 'g++.exe') -std=c++11 -Wall -Wextra -Iinclude src/meter.cpp src/render.cpp tools/preview.cpp -lgdi32 -o .pio/preview.exe
+& (Join-Path $compilerBin 'g++.exe') -std=c++11 -Wall -Wextra -Iinclude src/meter.cpp src/render.cpp src/render_layout.cpp src/render_gauges.cpp src/render_safety.cpp tools/preview.cpp -lgdi32 -o .pio/preview.exe
 & .pio/preview.exe
 ```
 
@@ -63,6 +63,8 @@ $env:PATH = "$compilerBin;$env:PATH"
 状態判定、シリアル照会、入力、画面描画、Core2 の液晶転送はそれぞれ独立した関数群に分けます。共通描画処理は PC プレビューと実機で共有します。実機では画面全体をオフスクリーン画像に描き、前回画像と行帯単位で比較します。異なる行帯だけを液晶へ転送し、変化がない回は転送しません。画面切替時は新しい画面を一度に組み立ててから転送します。描画間隔より短い BIDS 照会周期は維持します。
 
 日本語は読みやすいゴシック系フォントを選びます。表示灯の縦書きは長音記号を縦線にし、長い文字列は右列から左列へ折り返して枠内に収めます。各モジュールの公開 API、関数、状態を表す変数には Doxygen コメントを付け、責務を明示します。
+
+画面共通の振り分けは `src/render.cpp`、ホームと画面切替は `src/render_layout.cpp`、計器は `src/render_gauges.cpp`、灯群は `src/render_safety.cpp` に置きます。実機固有の USB 通信、操作入力、差分転送は `src/bids_transport.cpp`、`src/core2_input.cpp`、`src/core2_display.cpp` に分けます。コード整形設定は `.clang-format` にあります。
 
 ## 模擬 BIDS 送信機
 
