@@ -63,11 +63,11 @@ $env:PATH = "$compilerBin;$env:PATH"
 製品ファームウェアを書き込んだ Core2 と、ポートを開ける PC に Python と pyserial を用意します。pyserial がなければ `python -m pip install pyserial` で導入します。
 
 ```powershell
-python tools/mock_bids.py --port $port --version 202 --duration 16
-python tools/mock_bids.py --port $port --version 100 --duration 16
+python tools/mock_bids.py --port $port --version 202 --duration 16 --reset
+python tools/mock_bids.py --port $port --version 100 --duration 16 --reset
 ```
 
-送信機は Core2 の `TRIE1/E3/E4/H0/H1` と `TRIPn` 照会に応答します。5 秒ごとに走行、速度 0・BC 150 kPa の転動防止、回復を循環します。終了時に五つの基本照会の受信回数と Panel 照会の総数を表示し、基本照会が一つでも欠ければ失敗終了します。保安装置画面と CS-ATC の速度画面は本体で選択して Panel 照会を確認します。実画面の表示・点滅・操作も本体を目視して確認します。送信機とシリアルモニタは同時に開けません。
+送信機は Core2 の `TRIE1/E3/E4/H0/H1` と `TRIPn` 照会に応答します。`--reset` はポートを開いた後に Core2 を再起動し、起動時の `TRV202` 版照会から確認します。5 秒ごとに走行、速度 0・BC 150 kPa の転動防止、回復を循環します。終了時に版照会、五つの基本照会の受信回数と Panel 照会の総数を表示し、基本照会が一つでも欠ければ失敗終了します。保安装置画面と CS-ATC の速度画面は本体で選択して Panel 照会を確認します。実画面の表示・点滅・操作も本体を目視して確認します。送信機とシリアルモニタは同時に開けません。
 
 ## 実機テストと双方向シリアル通信
 

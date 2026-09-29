@@ -44,10 +44,17 @@ def main() -> int:
     parser.add_argument("--version", type=int, choices=(100, 202), default=202)
     parser.add_argument("--duration", type=float, default=16,
                         help="seconds to exchange messages")
+    parser.add_argument("--reset", action="store_true",
+                        help="pulse RTS to reboot Core2 after opening the port")
     args = parser.parse_args()
     counts = collections.Counter()
-    started = time.monotonic()
     with serial.Serial(args.port, 115200, timeout=0.25, write_timeout=1) as port:
+        if args.reset:
+            port.dtr = False
+            port.rts = True
+            time.sleep(0.1)
+            port.rts = False
+        started = time.monotonic()
         while time.monotonic() - started < args.duration:
             request = port.readline().decode("ascii", errors="ignore").strip()
             if not request:

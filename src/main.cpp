@@ -103,9 +103,9 @@ void loop() {
   const uint32_t now=millis();
   readSerial(now);
   handleInput();
-  if(uint32_t(now-lastCorePoll)>=100) {lastCorePoll=now;pollCore();}
-  if(uint32_t(now-lastPanelPoll)>=200) {lastPanelPoll=now;pollPanel();}
-  if(uint32_t(now-lastDraw)>=100) {
+  if(uint32_t(now-lastCorePoll)>=100) {lastCorePoll+=100;pollCore();}
+  if(uint32_t(now-lastPanelPoll)>=200) {lastPanelPoll+=200;pollPanel();}
+  if(uint32_t(now-lastDraw)>=250) {
     lastDraw=now;
     M5.Display.startWrite();
     meter::render(canvas,state,now);
