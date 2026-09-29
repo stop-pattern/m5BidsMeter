@@ -67,6 +67,6 @@
 
 - 目的: 6 画面を共通 C++ 描画で実装し、Core2 の USB シリアル照会と実機検証を進める。
 - 変更: `include/render.h`、`src/render.cpp`、`tools/preview.cpp` で画面と PC 用プレビューを実装した。`src/main.cpp` で M5Unified の画面・タッチ・中央ボタンと BIDS 照会を統合し、`tools/mock_bids.py` で v100/v202 応答を模擬する。コードは `24f1396`、`eb0fdc5` の 2 単位でコミットした。
-- 検証: MinGW g++ で `src/meter.cpp src/render.cpp test/test_model.cpp` をコンパイルしてテスト終了コード 0。共通描画の PC プレビュー 10 枚を生成し、目視確認した。`python -m py_compile tools/mock_bids.py` は成功。`pio run -e m5stack-core2` は成功し、フラッシュ使用率 34.2%、RAM 使用率 0.6%。
-- 実機: `pio test -e m5stack-core2 --upload-port <port> --test-port <port> -f test_environment` は書き込み段階で失敗。詳細ログでは ESP32 からシリアルデータを受け取れず、接続に失敗している。列挙された二つの USB シリアルポートのどちらも ESP32 ブートローダーへの照会に応答しなかった。したがって今回の実機テスト、製品ファームウェアの書き込み、模擬通信と画面の実機確認は未完了。ポート番号と機器固有 ID は記録しない。
+- 検証: MinGW g++ で `src/meter.cpp src/render.cpp test/test_model.cpp` をコンパイルしてテスト終了コード 0。共通描画の PC プレビュー 10 枚を生成し、目視確認した。`python -m py_compile tools/mock_bids.py` と模擬送信機の走行・転動防止・回復状態の値検査は成功。`pio run -e m5stack-core2` は成功し、フラッシュ使用率 34.2%、RAM 使用率 0.6%。
+- 実機: `pio test -e m5stack-core2 --upload-port <port> --test-port <port> -f test_environment` は書き込み段階で失敗。詳細ログでは ESP32 からシリアルデータを受け取れず、接続に失敗している。列挙された二つの USB シリアルポートのどちらも ESP32 ブートローダーへの照会に応答せず、再試行でも同じ結果だった。したがって今回の実機テスト、製品ファームウェアの書き込み、模擬通信と画面の実機確認は未完了。ポート番号と機器固有 ID は記録しない。
 - 次の作業: 本体電源と実際の接続ポートを確定し、書き込みを再試行する。環境テスト後に製品ファームウェアを書き戻し、模擬 BIDS v100/v202 通信と本体画面を確認する。
