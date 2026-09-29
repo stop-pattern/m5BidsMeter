@@ -33,6 +33,20 @@ Core2 の USB シリアル変換チップには CP2104 または CH9102F の機�
 
 ビルド成功と書き込み成功は別々に確認します。書き込みコマンドは接続中の Core2 のファームウェアを置き換えます。製品ファームウェアは 115200 bps で BIDS 情報を照会します。
 
+## PC 上の状態判定テスト
+
+PC 用 C++ コンパイラがない Windows 環境では、PlatformIO の `toolchain-gccmingw32` をユーザー領域へ導入する。子プロセスが DLL を見つけられるよう、`bin` をそのコマンドの PATH に追加する。
+
+```powershell
+& $pio pkg install --global --tool 'platformio/toolchain-gccmingw32'
+$compilerBin = Join-Path $env:USERPROFILE '.platformio\packages\toolchain-gccmingw32\bin'
+$env:PATH = "$compilerBin;$env:PATH"
+& (Join-Path $compilerBin 'g++.exe') -std=c++11 -Wall -Wextra -Iinclude src/meter.cpp test/test_model.cpp -o .pio/test_model.exe
+& .pio/test_model.exe
+```
+
+両コマンドの終了コードが 0 なら、BIDS 応答の解析と状態判定が成功している。
+
 ## 実機テストと双方向シリアル通信
 
 `test/test_environment/test_main.cpp` は ESP32 上で Unity テストを実行し、その後は `PING` に `PONG` と返す診断用ファームウェアです。次の手順では一時的にこのテストファームウェアを書き込みます。
