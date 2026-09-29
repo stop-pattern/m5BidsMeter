@@ -46,3 +46,11 @@
 - 検証: `pio run -e m5stack-core2` は成功。`pio test -e m5stack-core2 --upload-port <port> --test-port <port> -f test_environment` は実機で 1 件成功。`pio device monitor -p <port> -b 115200` で `PING` に対する `PONG` を確認。通常ファームウェアの `pio run -e m5stack-core2 -t upload --upload-port <port>` も成功。
 - 制約: 現在の通常ファームウェアは生成時サンプルであり、画面機能と BIDS v202 の通信はまだ確認していない。
 - 次の作業: 製品機能の実装時に、実データを使うテストと画面の実機確認を追加する。
+
+## 2026-09-30: 実装仕様の確定と着手
+
+- 目的: 画面、BIDS 通信、Panel 対応、検証条件を実装可能な仕様にする。
+- 変更: `docs/requirements.md` を確定事項で再構成。ユーザー提供の写真と作業メモをコミット対象から除外した。
+- 判断: ATS-P/Sn は公開端子表から確定できる灯のみ連動し、ATC-6 の端子を D-ATC に流用しない。CS-ATC は指定されたメトロ総合プラグインの表示用 Panel を利用する。未対応の灯は消灯で描く。
+- 検証: 公開 BIDS 仕様、v100 実装、ATS 端子表、メトロ総合プラグイン資料を照合。コードと実機の検証は後続の作業単位で行う。
+- 次の作業: 通信と状態判定、共通描画、実機統合を順に実装する。

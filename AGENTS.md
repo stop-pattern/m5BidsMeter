@@ -2,7 +2,7 @@
 
 ## Project and source of truth
 
-This is a PlatformIO firmware project for M5Stack Core2. `platformio.ini` defines the `m5stack-core2` environment with the Arduino framework. `src/main.cpp` is still the generated sample; meter behavior has not been implemented. `test/test_environment` checks the board and USB serial path, not product behavior. Use `docs/requirements.md` for the agreed product behavior.
+This is a PlatformIO firmware project for M5Stack Core2. `platformio.ini` defines the `m5stack-core2` environment with the Arduino framework. `test/test_environment` checks the board and USB serial path, not product behavior. Use `docs/requirements.md` for the agreed product behavior and check the current source and work log for implementation status.
 
 - `README.md`: project entry point and current structure.
 - `docs/requirements.md`: agreed product behavior and open product questions.
