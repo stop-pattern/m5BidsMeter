@@ -15,7 +15,7 @@ $pio = Join-Path $env:USERPROFILE '.platformio\penv\Scripts\pio.exe'
 
 ## Core2 のポートを特定する
 
-Core2 を USB で接続し、ポート一覧を確認します。
+Core2 を USB で接続し、左側の電源ボタンを 1 回押して起動します。必要なら底面の RST ボタンを 1 回押してリセットします。画面が消灯している場合は既存ファームウェアの動作だけでは電源状態を判断できないため、本体の表示・電源ランプとポートの接続状態を確認します。ポート一覧を確認します。
 
 ```powershell
 & $pio device list
