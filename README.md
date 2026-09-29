@@ -8,7 +8,8 @@ M5Stack Core2 向けの PlatformIO ファームウェア開発リポジトリで
 | --- | --- |
 | `platformio.ini` | `m5stack-core2`、`espressif32`、Arduino のビルド設定 |
 | `src/`、`include/`、`lib/` | アプリケーションコード、共有ヘッダー、プロジェクト固有ライブラリ |
-| `test/` | PlatformIO の実機環境テスト |
+| `test/` | 実機環境テストと PC 用の状態判定テスト |
+| `tools/` | 共通描画の PC プレビューと模擬 BIDS 送信機 |
 | [AGENTS.md](AGENTS.md) | Codex の作業・記録・コミット指針 |
 | [要件メモ](docs/requirements.md) | 現行の製品仕様と資料待ちの項目 |
 | [開発ガイド](docs/development.md) | 環境、ビルド、実機書き込み、検証方法 |

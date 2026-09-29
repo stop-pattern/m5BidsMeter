@@ -2,7 +2,7 @@
 
 ## 目的と入力
 
-M5Stack Core2 に E233 系 TIMS を模した 320×240 画面を表示する。PC 側ゲームの BIDS v100/v202 ASCII 通信を USB シリアル 115200 bps、8N1、改行終端で取得する。[v202 コマンド仕様](https://gist.github.com/TetsuOtter/76b974d462276c9c993ddeb0b6a90cb0)、[v100 実装](https://github.com/Tralsys/BIDSid_SerCon)。`TRV202` で版を照会し、`TRIE1`（速度）、`TRIE3`（BC）、`TRIE4`（MR）、`TRIH0`（制動）、`TRIH1`（力行）を約 10 Hz で照会する。応答は `要求X値`。操作コマンドは送らない。選択中の保安装置に必要な `TRIPn` は保安装置画面だけで約 5 Hz で照会する。
+M5Stack Core2 に E233 系 TIMS を模した 320×240 画面を表示する。PC 側ゲームの BIDS v100/v202 ASCII 通信を USB シリアル 115200 bps、8N1、改行終端で取得する。[v202 コマンド仕様](https://gist.github.com/TetsuOtter/76b974d462276c9c993ddeb0b6a90cb0)、[v100 実装](https://github.com/Tralsys/BIDSid_SerCon)。`TRV202` で版を照会し、`TRIE1`（速度）、`TRIE3`（BC）、`TRIE4`（MR）、`TRIH0`（制動）、`TRIH1`（力行）を約 10 Hz で照会する。応答は `要求X値`。操作コマンドは送らない。選択中の保安装置に必要な `TRIPn` は保安装置画面で、CS-ATC の現示用 `TRIPn` は速度画面で約 5 Hz で照会する。
 
 初期値は 0 とし、5 秒間有効応答がなければ最後の値を保持して「通信断」を表示する。復帰時は通常表示に戻す。数値表示は四捨五入した整数。版番号は画面に出さない。
 

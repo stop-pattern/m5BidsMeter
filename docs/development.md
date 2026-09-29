@@ -41,11 +41,33 @@ PC 用 C++ コンパイラがない Windows 環境では、PlatformIO の `toolc
 & $pio pkg install --global --tool 'platformio/toolchain-gccmingw32'
 $compilerBin = Join-Path $env:USERPROFILE '.platformio\packages\toolchain-gccmingw32\bin'
 $env:PATH = "$compilerBin;$env:PATH"
-& (Join-Path $compilerBin 'g++.exe') -std=c++11 -Wall -Wextra -Iinclude src/meter.cpp test/test_model.cpp -o .pio/test_model.exe
+& (Join-Path $compilerBin 'g++.exe') -std=c++11 -Wall -Wextra -Iinclude src/meter.cpp src/render.cpp test/test_model.cpp -o .pio/test_model.exe
 & .pio/test_model.exe
 ```
 
-両コマンドの終了コードが 0 なら、BIDS 応答の解析と状態判定が成功している。
+両コマンドの終了コードが 0 なら、BIDS 応答の解析、状態判定、画面遷移のテストが成功しています。
+
+## PC 上の画面プレビュー
+
+状態判定テストと同じ C++ 描画処理を Windows GDI で表示用画像に変換します。前節の `$compilerBin` と PATH の設定を使います。
+
+```powershell
+& (Join-Path $compilerBin 'g++.exe') -std=c++11 -Wall -Wextra -Iinclude src/meter.cpp src/render.cpp tools/preview.cpp -lgdi32 -o .pio/preview.exe
+& .pio/preview.exe
+```
+
+`preview/` に 10 枚の BMP ができます。速度、BC 警告の赤・通常状態、ブレーキ、3 種類の保安装置、選択画面を目視確認します。`preview/` はコミットしません。
+
+## 模擬 BIDS 送信機
+
+製品ファームウェアを書き込んだ Core2 と、ポートを開ける PC に Python と pyserial を用意します。pyserial がなければ `python -m pip install pyserial` で導入します。
+
+```powershell
+python tools/mock_bids.py --port $port --version 202 --duration 16
+python tools/mock_bids.py --port $port --version 100 --duration 16
+```
+
+送信機は Core2 の `TRIE1/E3/E4/H0/H1` と `TRIPn` 照会に応答します。5 秒ごとに走行、速度 0・BC 150 kPa の転動防止、回復を循環します。終了時に五つの基本照会の受信回数と Panel 照会の総数を表示し、基本照会が一つでも欠ければ失敗終了します。保安装置画面と CS-ATC の速度画面は本体で選択して Panel 照会を確認します。実画面の表示・点滅・操作も本体を目視して確認します。送信機とシリアルモニタは同時に開けません。
 
 ## 実機テストと双方向シリアル通信
 
@@ -59,6 +81,8 @@ $env:PATH = "$compilerBin;$env:PATH"
 テストでは `test_esp32_runtime_has_free_heap` の `[PASSED]` と、サマリーの成功件数を確認します。モニタが開いたら `PING` を入力して Enter を押し、`PONG` が返ることを確認します。`Ctrl+C` でモニタを終了します。通信の確認後は、上記の通常ファームウェアの書き込みコマンドを再実行して戻します。モニタを閉じてから書き込んでください。同じポートを同時に開くことはできません。
 
 このテストは PlatformIO のビルド、書き込み、実機上の Unity 実行、USB シリアルの双方向通信を確認します。画面、タッチ操作、BIDS 通信、PC ゲームとの連携は確認しません。製品の検証では模擬 BIDS 送信機を使用し、テスト後は製品ファームウェアを書き戻してください。
+
+書き込み時に `Failed to connect to ESP32: No serial data received` と出る場合は、対象ポートの接続・切断による変化、本体電源、ほかのアプリによるポート占有を確認します。ポート一覧の名称だけでは対象機を確定できません。必要に応じて本体のリセットを試し、同じポートで再実行します。書き込み成功前に実機テスト成功とは記録しません。
 
 ## 参照資料
 
